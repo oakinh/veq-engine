@@ -19,11 +19,20 @@ struct Table {
 ### Invariants
 - id.size() == age.size() == occupation_id.size()
 
+## Operator Interface
+```
+class IOperator {
+    
+}
+```
+
+
 ## Batch
 - A set of rows, defined as views over multiple columns
+- It does not own the column memory
 ```
 struct Batch {
-    std::array<const Column&, 3> columns {};
+    std::array<const Column*, 3> columns {};
     std::vector<std::size_t> selection;
     std::size_t start_row;
     std::size_t size;
