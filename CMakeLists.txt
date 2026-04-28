@@ -50,19 +50,13 @@ target_sources(veq
         src/storage/batch.cpp
         src/execution/scan.cpp
         src/execution/filter.cpp
-        src/execution/projection.cpp
 
         PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS include
-        FILES
         include/veq/storage/column.hpp
         include/veq/storage/table.hpp
         include/veq/storage/batch.hpp
         include/veq/execution/scan.hpp
         include/veq/execution/filter.hpp
-        include/veq/execution/projection.hpp
-        #include/veq/util/assert.hpp
 )
 
 # ------------------------------------------------------------------------------
@@ -113,14 +107,14 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
 
     include(GoogleTest)
 
-#    add_executable(veq_tests
+    add_executable(veq_tests
 #            tests/column_test.cpp
-#            tests/table_test.cpp
+            tests/table_test.cpp
 #            tests/batch_test.cpp
 #            tests/operators/scan_test.cpp
 #            tests/operators/filter_test.cpp
 #            tests/operators/projection_test.cpp
-#    )
+    )
 
     target_link_libraries(veq_tests
             PRIVATE

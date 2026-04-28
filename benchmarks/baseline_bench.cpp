@@ -1,88 +1,169 @@
 #include <benchmark/benchmark.h>
-#include <vector>
+
+#include <cstddef>
+#include <cstdint>
 #include <numeric>
-#include <cmath>
+#include <vector>
+
+namespace {
+
+constexpr std::size_t batch_size = 1024;
 
 // -----------------------------------------------------------------------------
-// Example function to benchmark (placeholder – replace in real projects)
+// Baseline: sequential scan over one int64 column
 // -----------------------------------------------------------------------------
-static double example_compute(double x) {
-    double acc = x;
-    for (int i = 0; i < 128; ++i) {
-        acc = std::sin(acc) + 0.001 * i;
-    }
-    return acc;
-}
+//
+// Purpose:
+// - Establish raw column scan cost.
+// - This is your "how fast can I walk contiguous memory?" baseline.
+//
+// Expected behavior:
+// - Very cache-friendly.
+// - Mostly memory bandwidth / tight-loop limited for large inputs.
+// - Branch-free inner loop.
+//
+static void BM_ColumnScanSum(benchmark::State& state) {
+    const auto row_count = static_cast<std::size_t>(state.range(0));
 
-// -----------------------------------------------------------------------------
-// Simple baseline benchmark
-// -----------------------------------------------------------------------------
-static void BM_ExampleCompute(benchmark::State& state) {
-    double x = 0.5;
-
-    for ([[maybe_unused]] auto _ : state) {
-        benchmark::DoNotOptimize(x);
-        double r = example_compute(x);
-        benchmark::DoNotOptimize(r);
-        benchmark::ClobberMemory();
-    }
-}
-
-BENCHMARK(BM_ExampleCompute);
-
-// -----------------------------------------------------------------------------
-// Range-based benchmark
-// -----------------------------------------------------------------------------
-static void BM_ExampleLoop(benchmark::State& state) {
-    const int n = static_cast<int>(state.range(0));
+    std::vector<std::uint64_t> column(row_count);
+    std::iota(column.begin(), column.end(), 0);
 
     for ([[maybe_unused]] auto _ : state) {
-        double acc = 0.0;
-        for (int i = 0; i < n; ++i) {
-            acc += example_compute(i * 0.001);
+        std::uint64_t sum = 0;
+
+        for (std::size_t i = 0; i < column.size(); ++i) {
+            sum += column[i];
         }
-        benchmark::DoNotOptimize(acc);
-        benchmark::ClobberMemory();
-    }
-}
 
-BENCHMARK(BM_ExampleLoop)
-    ->RangeMultiplier(8)
-    ->Range(1, 1 << 15);
-
-// -----------------------------------------------------------------------------
-// Fixture example
-// -----------------------------------------------------------------------------
-class ExampleFixture : public benchmark::Fixture {
-public:
-    std::vector<double> data;
-
-    void SetUp(const benchmark::State& state) override {
-        int n = static_cast<int>(state.range(0));
-        data.resize(n);
-        std::iota(data.begin(), data.end(), 0.0);
-    }
-
-    void TearDown(const benchmark::State&) override {
-        data.clear();
-    }
-};
-
-BENCHMARK_DEFINE_F(ExampleFixture, ProcessData)(benchmark::State& state) {
-    for ([[maybe_unused]] auto _ : state) {
-        double sum = 0.0;
-        for (double x : data) {
-            sum += example_compute(x);
-        }
         benchmark::DoNotOptimize(sum);
     }
+
+    state.SetItemsProcessed(
+        static_cast<std::int64_t>(state.iterations() * row_count)
+    );
 }
 
-BENCHMARK_REGISTER_F(ExampleFixture, ProcessData)
-    ->RangeMultiplier(4)
-    ->Range(16, 4096);
+BENCHMARK(BM_ColumnScanSum)
+        ->RangeMultiplier(8)
+        ->Range(batch_size, 1 << 24);
 
 // -----------------------------------------------------------------------------
-// Let Google Benchmark provide main()
+// Baseline: filter into selection vector
 // -----------------------------------------------------------------------------
+//
+// Purpose:
+// - Establish cost of producing a selection vector.
+// - This is the core primitive for your filter operator.
+//
+// Expected behavior:
+// - Sequential input read.
+// - Sequential-ish output write.
+// - Branch behavior depends heavily on selectivity.
+// - Around 50% selectivity is often worse for branch prediction.
+//
+static void BM_FilterSelectionVector(benchmark::State& state) {
+    const auto row_count = static_cast<std::size_t>(state.range(0));
+    const auto threshold = static_cast<std::uint64_t>(state.range(1));
+
+    std::vector<std::uint64_t> age(row_count);
+    std::vector<std::uint32_t> selection;
+    selection.reserve(row_count);
+
+    for (std::size_t i = 0; i < row_count; ++i) {
+        age[i] = static_cast<std::uint64_t>(i % 100);
+    }
+
+    for ([[maybe_unused]] auto _ : state) {
+        selection.clear();
+
+        for (std::size_t i = 0; i < age.size(); ++i) {
+            if (age[i] >= threshold) {
+                selection.push_back(static_cast<std::uint32_t>(i));
+            }
+        }
+
+        benchmark::DoNotOptimize(selection.data());
+        benchmark::DoNotOptimize(selection.size());
+        benchmark::ClobberMemory();
+    }
+
+    state.SetItemsProcessed(
+        static_cast<std::int64_t>(state.iterations() * row_count)
+    );
+}
+
+// threshold 1  => high selectivity
+// threshold 50 => ~50% selectivity
+// threshold 99 => low selectivity
+BENCHMARK(BM_FilterSelectionVector)
+        ->Args({1024, 1})
+        ->Args({1024, 50})
+        ->Args({1024, 99})
+        ->Args({1 << 16, 1})
+        ->Args({1 << 16, 50})
+        ->Args({1 << 16, 99})
+        ->Args({1 << 24, 1})
+        ->Args({1 << 24, 50})
+        ->Args({1 << 24, 99});
+
+// -----------------------------------------------------------------------------
+// Baseline: projection using selection vector
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+// - Establish cost of gathering selected rows from one column into output.
+// - This approximates projection after filter.
+//
+// Expected behavior:
+// - Sequential output writes.
+// - Input access pattern depends on selection vector.
+// - Dense selection is cache-friendly.
+// - Sparse/random selection later will be much worse.
+//
+static void BM_ProjectWithSelectionVector(benchmark::State& state) {
+    const auto row_count = static_cast<std::size_t>(state.range(0));
+    const auto stride = static_cast<std::size_t>(state.range(1));
+
+    std::vector<std::uint64_t> input(row_count);
+    std::vector<std::uint32_t> selection;
+    std::vector<std::uint64_t> output;
+
+    std::iota(input.begin(), input.end(), 0);
+
+    for (std::size_t i = 0; i < row_count; i += stride) {
+        selection.push_back(static_cast<std::uint32_t>(i));
+    }
+
+    output.resize(selection.size());
+
+    for ([[maybe_unused]] auto _ : state) {
+        for (std::size_t i = 0; i < selection.size(); ++i) {
+            output[i] = input[selection[i]];
+        }
+
+        benchmark::DoNotOptimize(output.data());
+        benchmark::ClobberMemory();
+    }
+
+    state.SetItemsProcessed(
+        static_cast<std::int64_t>(state.iterations() * selection.size())
+    );
+}
+
+// stride 1  => dense projection
+// stride 4  => semi-dense
+// stride 16 => sparse
+BENCHMARK(BM_ProjectWithSelectionVector)
+        ->Args({1024, 1})
+        ->Args({1024, 4})
+        ->Args({1024, 16})
+        ->Args({1 << 16, 1})
+        ->Args({1 << 16, 4})
+        ->Args({1 << 16, 16})
+        ->Args({1 << 24, 1})
+        ->Args({1 << 24, 4})
+        ->Args({1 << 24, 16});
+
+} // namespace
+
 BENCHMARK_MAIN();

@@ -19,7 +19,4 @@ cmake --build --preset "$PRESET" -j
 
 echo "==> Running tests (TSAN enabled)"
 TSAN_OPTIONS="halt_on_error=1" \
-ctest \
-  --test-dir "$BUILD_DIR" \
-  --output-on-failure \
-  -j
+ctest --test-dir "$BUILD_DIR" --output-on-failure -j

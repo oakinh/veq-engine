@@ -5,7 +5,10 @@
       "name": "base",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/base",
-      "environment": { "CC": "clang-19", "CXX": "clang++-19" },
+      "environment": {
+        "CC": "clang-19",
+        "CXX": "clang++-19"
+      },
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang-19",
         "CMAKE_CXX_COMPILER": "clang++-19",
@@ -15,6 +18,7 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_CXX_FLAGS": "-stdlib=libc++",
         "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++",
         "CMAKE_CXX_CLANG_TIDY": "clang-tidy-19;-extra-arg=-std=c++23;-extra-arg=-stdlib=libc++"
       }
     },
@@ -23,8 +27,7 @@
       "inherits": "base",
       "binaryDir": "${sourceDir}/build/libcxx",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
-        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libc++"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -32,9 +35,9 @@
       "inherits": "libcxx",
       "binaryDir": "${sourceDir}/build/asan",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_FLAGS": "-stdlib=libc++ -fsanitize=address,undefined -fno-omit-frame-pointer -g",
-        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libc++ -fsanitize=address,undefined"
+        "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++ -fsanitize=address,undefined",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++ -fsanitize=address,undefined"
       }
     },
     {
@@ -42,18 +45,18 @@
       "inherits": "libcxx",
       "binaryDir": "${sourceDir}/build/tsan",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_FLAGS": "-stdlib=libc++ -fsanitize=thread -fno-omit-frame-pointer -g",
-        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libc++ -fsanitize=thread"
+        "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++ -fsanitize=thread",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++ -fsanitize=thread"
       }
     },
     {
       "name": "release",
-      "inherits": "libcxx",
+      "inherits": "base",
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "SYSTEMS_DSA_BUILD_SCRATCH": "OFF"
+        "VEQ_BUILD_SCRATCH": "OFF"
       }
     },
     {
@@ -61,11 +64,11 @@
       "inherits": "release",
       "binaryDir": "${sourceDir}/build/bench",
       "cacheVariables": {
-        "SYSTEMS_DSA_BUILD_BENCHMARKS": "ON",
-        "SYSTEMS_DSA_BUILD_TESTS": "OFF"
+        "VEQ_BUILD_BENCHMARKS": "ON",
+        "VEQ_BUILD_TESTS": "OFF",
+        "VEQ_BUILD_SCRATCH": "OFF"
       }
     }
-
   ],
   "buildPresets": [
     { "name": "base", "configurePreset": "base" },
@@ -73,9 +76,10 @@
     { "name": "asan", "configurePreset": "asan" },
     { "name": "tsan", "configurePreset": "tsan" },
     { "name": "release", "configurePreset": "release" },
-    { "name":  "bench", "configurePreset":  "bench"}
+    { "name": "bench", "configurePreset": "bench" }
   ],
   "testPresets": [
+    { "name": "libcxx", "configurePreset": "libcxx" },
     { "name": "asan", "configurePreset": "asan" },
     { "name": "tsan", "configurePreset": "tsan" },
     { "name": "release", "configurePreset": "release" }

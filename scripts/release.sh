@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cmake --preset release
-cmake --build --preset release
-ctest --test-dir build/release --output-on-failure
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+PRESET="release"
+BUILD_DIR="$REPO_ROOT/build/$PRESET"
+
+echo "==> Configuring ($PRESET preset)"
+cmake --preset "$PRESET"
+
+if [[ -f "$BUILD_DIR/compile_commands.json" ]]; then
+  ln -sf "$BUILD_DIR/compile_commands.json" "$REPO_ROOT/compile_commands.json"
+fi
+
+echo "==> Building"
+cmake --build --preset "$PRESET" -j
+
+echo "==> Running tests"
+ctest --test-dir "$BUILD_DIR" --output-on-failure -j
