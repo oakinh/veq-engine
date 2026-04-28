@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PRESET="${1:-libcxx}"
-cmake --preset "$PRESET"
-cmake --build --preset "$PRESET" -j
-ctest --test-dir "build/$PRESET" --output-on-failure -j
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+echo "==> Configuring default VEQ dev preset"
+cmake --preset libcxx
+
+echo "==> Building"
+cmake --build --preset libcxx -j
+
+if [[ -f "$REPO_ROOT/build/libcxx/compile_commands.json" ]]; then
+  ln -sf "$REPO_ROOT/build/libcxx/compile_commands.json" "$REPO_ROOT/compile_commands.json"
+  echo "compile_commands.json -> build/libcxx/compile_commands.json"
+fi
+
+echo "==> Done"

@@ -1,0 +1,82 @@
+Start testing: Apr 28 08:47 CDT
+----------------------------------------------------------
+1/2 Testing: TableTest.HasExpectedElements
+1/2 Test: TableTest.HasExpectedElements
+Command: "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests" "--gtest_filter=TableTest.HasExpectedElements" "--gtest_also_run_disabled_tests"
+Directory: /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan
+"TableTest.HasExpectedElements" start time: Apr 28 08:47 CDT
+Output:
+----------------------------------------------------------
+Running main() from /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = TableTest.HasExpectedElements
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from TableTest
+[ RUN      ] TableTest.HasExpectedElements
+[       OK ] TableTest.HasExpectedElements (0 ms)
+[----------] 1 test from TableTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TableTest.HasExpectedElements" end time: Apr 28 08:47 CDT
+"TableTest.HasExpectedElements" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: veq_bench_smoke
+2/2 Test: veq_bench_smoke
+Command: "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/benchmarks/veq_bench" "--benchmark_min_time=0.01" "--benchmark_filter=."
+Directory: /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/benchmarks
+"veq_bench_smoke" start time: Apr 28 08:47 CDT
+Output:
+----------------------------------------------------------
+2026-04-28T08:47:57-05:00
+Running /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/benchmarks/veq_bench
+Run on (24 X 2304.01 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x12)
+  L1 Instruction 32 KiB (x12)
+  L2 Unified 1280 KiB (x12)
+  L3 Unified 30720 KiB (x1)
+Load Average: 0.60, 0.13, 0.12
+***WARNING*** Library was built as DEBUG. Timings may be affected.
+-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.-- LOG(0): Value passed to --benchmark_min_time should have a suffix. Eg., `30s` for 30-seconds.----------------------------------------------------------------------------------------------------
+Benchmark                                          Time             CPU   Iterations UserCounters...
+----------------------------------------------------------------------------------------------------
+BM_ColumnScanSum/1024                           4983 ns         5031 ns         2669 items_per_second=203.555M/s
+BM_ColumnScanSum/4096                          19709 ns        19843 ns          705 items_per_second=206.425M/s
+BM_ColumnScanSum/32768                        159261 ns       160667 ns           81 items_per_second=203.95M/s
+BM_ColumnScanSum/262144                      1400134 ns      1413354 ns           11 items_per_second=185.477M/s
+BM_ColumnScanSum/2097152                    10426960 ns     10531877 ns            1 items_per_second=199.124M/s
+BM_ColumnScanSum/16777216                   82098693 ns     82871020 ns            1 items_per_second=202.45M/s
+BM_FilterSelectionVector/1024/1               103323 ns       104311 ns          141 items_per_second=9.81678M/s
+BM_FilterSelectionVector/1024/50               43638 ns        44059 ns          325 items_per_second=23.2417M/s
+BM_FilterSelectionVector/1024/99                6932 ns         6998 ns         2250 items_per_second=146.33M/s
+BM_FilterSelectionVector/65536/1             5208740 ns      5258182 ns            2 items_per_second=12.4636M/s
+BM_FilterSelectionVector/65536/50            3150445 ns      3180647 ns            5 items_per_second=20.6046M/s
+BM_FilterSelectionVector/65536/99             410018 ns       413936 ns           37 items_per_second=158.324M/s
+BM_FilterSelectionVector/16777216/1       1325070580 ns   1337549000 ns            1 items_per_second=12.5433M/s
+BM_FilterSelectionVector/16777216/50       735714506 ns    742645535 ns            1 items_per_second=22.5911M/s
+BM_FilterSelectionVector/16777216/99       134538311 ns    135804502 ns            1 items_per_second=123.539M/s
+BM_ProjectWithSelectionVector/1024/1           15572 ns        15726 ns         1246 items_per_second=65.1149M/s
+BM_ProjectWithSelectionVector/1024/4            2739 ns         2765 ns         5314 items_per_second=92.5878M/s
+BM_ProjectWithSelectionVector/1024/16            689 ns          696 ns        20461 items_per_second=91.998M/s
+BM_ProjectWithSelectionVector/65536/1         746669 ns       753761 ns           19 items_per_second=86.9454M/s
+BM_ProjectWithSelectionVector/65536/4         176303 ns       177971 ns           77 items_per_second=92.06M/s
+BM_ProjectWithSelectionVector/65536/16         43839 ns        44255 ns          316 items_per_second=92.555M/s
+BM_ProjectWithSelectionVector/16777216/1   192804505 ns    201164940 ns            1 items_per_second=83.4003M/s
+BM_ProjectWithSelectionVector/16777216/4    46258192 ns     48286487 ns            1 items_per_second=86.8629M/s
+BM_ProjectWithSelectionVector/16777216/16   13256844 ns     13838782 ns            1 items_per_second=75.7708M/s
+<end of output>
+Test time =   8.46 sec
+----------------------------------------------------------
+Test Passed.
+"veq_bench_smoke" end time: Apr 28 08:48 CDT
+"veq_bench_smoke" time elapsed: 00:00:08
+----------------------------------------------------------
+
+End testing: Apr 28 08:48 CDT

@@ -6,7 +6,7 @@ cd "$REPO_ROOT"
 
 PRESET="asan"
 BUILD_DIR="$REPO_ROOT/build/$PRESET"
-SCRATCH_BIN="$BUILD_DIR/systems_dsa_scratch"
+SCRATCH_BIN="$BUILD_DIR/veq_scratch"
 
 echo "==> Configuring ($PRESET preset)"
 cmake --preset "$PRESET"
@@ -23,6 +23,7 @@ if [[ ! -x "$SCRATCH_BIN" ]]; then
   exit 1
 fi
 
-echo "==> Running scratch (ASAN enabled)"
+echo "==> Running scratch (ASAN/UBSAN enabled)"
 ASAN_OPTIONS="detect_leaks=1:abort_on_error=1" \
+UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
 "$SCRATCH_BIN" "$@"
