@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vector>
-#include <cstdint>
+#include <veq/storage/column.hpp>
 
 namespace veq {
-    using Column = std::vector<std::uint64_t>;
+    constexpr std::size_t TABLE_COLUMN_COUNT = 3;
+
+    constexpr std::array<std::string, TABLE_COLUMN_COUNT> COLUMN_NAMES { "id", "age", "occupation_id" };
 
     struct Table {
-        Column id;
-        Column age;
-        Column occupation_id;
+        Column id {};
+        Column age {};
+        Column occupation_id {};
     };
 }
