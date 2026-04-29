@@ -1,8 +1,13 @@
-//
-// Created by nikao on 4/27/2026.
-//
+#pragma once
 
-#ifndef VEQ_ENGINE_FILTER_HPP
-#define VEQ_ENGINE_FILTER_HPP
+#include <veq/execution/scan.hpp>
+#include <veq/storage/batch.hpp>
 
-#endif //VEQ_ENGINE_FILTER_HPP
+namespace veq {
+    class Filter {
+    public:
+
+    private:
+
+    };
+}

@@ -6,7 +6,7 @@ project(veq VERSION 0.1.0 LANGUAGES CXX)
 # Options
 # ------------------------------------------------------------------------------
 option(VEQ_BUILD_TESTS              "Build unit tests" ON)
-option(VEQ_BUILD_BENCHMARKS         "Build benchmarks" ON)
+option(VEQ_BUILD_BENCHMARKS         "Build benchmarks" OFF)
 option(VEQ_BUILD_SCRATCH            "Build scratch executable" ON)
 option(VEQ_WARNINGS_AS_ERRORS       "Treat warnings as errors for VEQ targets" ON)
 
@@ -111,9 +111,9 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
 #            tests/column_test.cpp
             tests/table_test.cpp
 #            tests/batch_test.cpp
-#            tests/operators/scan_test.cpp
-#            tests/operators/filter_test.cpp
-#            tests/operators/projection_test.cpp
+            tests/scan_test.cpp
+#            tests/execution/filter_test.cpp
+#            tests/execution/projection_test.cpp
     )
 
     target_link_libraries(veq_tests

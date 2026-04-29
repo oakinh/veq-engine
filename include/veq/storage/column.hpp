@@ -1,8 +1,11 @@
-//
-// Created by nikao on 4/27/2026.
-//
+#pragma once
 
-#ifndef VEQ_ENGINE_COLUMN_HPP
-#define VEQ_ENGINE_COLUMN_HPP
+#include <vector>
+#include <cstdint>
 
-#endif //VEQ_ENGINE_COLUMN_HPP
+namespace veq {
+    using Column = std::vector<std::uint64_t>;
+    struct ColumnView {
+        const std::uint64_t* data;
+    };
+}

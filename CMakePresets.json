@@ -19,7 +19,11 @@
         "CMAKE_CXX_FLAGS": "-stdlib=libc++",
         "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++",
         "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld -stdlib=libc++",
-        "CMAKE_CXX_CLANG_TIDY": "clang-tidy-19;-extra-arg=-std=c++23;-extra-arg=-stdlib=libc++"
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy-19;-extra-arg=-std=c++23;-extra-arg=-stdlib=libc++",
+
+        "VEQ_BUILD_TESTS": "ON",
+        "VEQ_BUILD_BENCHMARKS": "OFF",
+        "VEQ_BUILD_SCRATCH": "ON"
       }
     },
     {
