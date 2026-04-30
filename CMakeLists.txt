@@ -112,7 +112,7 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
             tests/table_test.cpp
 #            tests/batch_test.cpp
             tests/scan_test.cpp
-#            tests/execution/filter_test.cpp
+            tests/filter_test.cpp
 #            tests/execution/projection_test.cpp
     )
 
