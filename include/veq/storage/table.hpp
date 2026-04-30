@@ -1,6 +1,7 @@
 #pragma once
 
 #include <veq/storage/column.hpp>
+#include <string>
 
 namespace veq {
     constexpr std::size_t TABLE_COLUMN_COUNT = 3;

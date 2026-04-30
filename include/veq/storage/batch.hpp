@@ -15,7 +15,7 @@ namespace veq {
 
     struct SelectedBatch {
         std::span<const ColumnView> columns {};
-        const std::size_t* selection {};
+        std::span<const std::size_t> selection {};
         std::size_t size {};
     };
 }

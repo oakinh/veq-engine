@@ -7,20 +7,26 @@
 namespace veq {
     class Scan {
     public:
-        ColumnBatch nextBatch();
+        using ColumnViews = std::array<const ColumnView, TABLE_COLUMN_COUNT>;
 
         explicit Scan(const Table& table, std::size_t batch_size = MAX_BATCH_SIZE)
-            : m_table{ table }
-            , m_batch_size{ batch_size }
+            : table_{ table }
+            , columns_ {
+                ColumnView{ table.id.data() },
+                ColumnView{ table.age.data() },
+                ColumnView{ table.occupation_id.data() }
+            }
+            , batch_size_{ batch_size }
         {
-            assert(m_batch_size <= MAX_BATCH_SIZE);
+            assert(batch_size_ <= MAX_BATCH_SIZE);
         }
 
+        ColumnBatch nextBatch();
+        bool hasNextBatch() const { return last_row_ == table_.id.size(); }
     private:
-        const Table& m_table;
-        std::size_t m_batch_size {};
-        std::size_t m_last_row {};
-
-
+        const Table& table_;
+        const ColumnViews columns_ {};
+        std::size_t batch_size_ {};
+        std::size_t last_row_ {};
     };
 }

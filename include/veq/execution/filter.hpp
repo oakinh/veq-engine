@@ -1,27 +1,43 @@
 #pragma once
 
 #include <veq/storage/batch.hpp>
+#include <veq/storage/column.hpp>
+
+#include "scan.hpp"
 
 namespace veq {
-    enum class FilterOperator {
-        LT,
-        GT,
-        EQ
-    };
-
+    template <typename Compare>
     struct FilterOperation {
-        FilterOperator op {};
-        std::uint64_t operand {};
+        Compare compare {};
+        std::uint64_t value {};
     };
 
     class Filter {
     public:
-        Filter(const Table& table) :
-            m_table{ table }
-        {}
+        Filter() = default;
 
-        SelectedBatch apply(ColumnBatch& batch, FilterOperation operation);
+        template <typename Compare>
+        SelectedBatch apply(const ColumnBatch& batch, const ColumnView target_column, const FilterOperation<Compare> operation) {
+            const auto& [compare, value] = operation;
+            const auto& [columns, start_row, size] = batch;
+            std::vector<std::size_t> selection {};
+            for (std::size_t i { start_row }; i < size; ++i) {
+                if (compare(target_column.data[i], value)) {
+                    selection.emplace_back(i);
+                }
+            }
+
+            selection_ = selection;
+
+            return {
+                .columns=batch.columns,
+                .selection=selection_,
+                .size=selection.size()
+            };
+
+        }
     private:
-        const Table& m_table;
+        // Buffer, list of indexes
+        std::vector<std::size_t> selection_ {};
     };
 }
