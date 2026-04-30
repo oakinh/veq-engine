@@ -1,5 +1,0 @@
-TableTest.HasExpectedElements 14 0.000732546
-veq_bench_smoke 8 1.11162
-ScanTest.NextBatchIteratesThroughColumns 9 0.00109352
-FilterTest.FiltersDataAsExpected 1 0.00977818
----

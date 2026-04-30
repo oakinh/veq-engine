@@ -1,5 +1,0 @@
-if(EXISTS "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/libcxx/veq_tests[1]_tests.cmake")
-  include("/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/libcxx/veq_tests[1]_tests.cmake")
-else()
-  add_test(veq_tests_NOT_BUILT veq_tests_NOT_BUILT)
-endif()
