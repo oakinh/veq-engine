@@ -2,28 +2,12 @@
 #include <veq/execution/scan.hpp>
 #include <veq/storage/table.hpp>
 #include <veq/storage/batch.hpp>
+#include <fixtures/table_fixtures.hpp>
 
 class ScanTest : public testing::Test {
 protected:
-    ScanTest()
-        : t0_ {
-            .id = {
-                1, 2, 3, 4, 5,
-                6, 7, 8, 9, 10
-            },
-            .age = {
-                25, 30, 25, 40, 30,
-                25, 35, 40, 25, 30
-            },
-            .occupation_id = {
-                100, 200, 100, 300, 200,
-                100, 400, 300, 100, 200
-            }
-        },
-          s0_ { t0_, 4 }
-    {}
-    veq::Table t0_;
-    veq::Scan s0_;
+    veq::Table t0_ { veq::test::makeTinyTable() };
+    veq::Scan s0_ { t0_, 4 };
 };
 
 TEST_F(ScanTest, NextBatchIteratesThroughColumns) {

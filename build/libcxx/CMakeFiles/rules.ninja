@@ -115,63 +115,6 @@ rule CXX_STATIC_LIBRARY_LINKER__gtest_main_Debug
 
 
 #############################################
-# Rule for compiling CXX files.
-
-rule CXX_COMPILER__veq_bench_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/cmake -E __run_co_compile --tidy="clang-tidy-19;-extra-arg=-std=c++23;-extra-arg=-stdlib=libc++;--extra-arg-before=--driver-mode=g++" --source=$in -- /usr/bin/clang++-19 $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building CXX object $out
-
-
-#############################################
-# Rule for linking CXX executable.
-
-rule CXX_EXECUTABLE_LINKER__veq_bench_Debug
-  command = $PRE_LINK && /usr/bin/clang++-19 $FLAGS $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD
-  description = Linking CXX executable $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling CXX files.
-
-rule CXX_COMPILER__benchmark_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/clang++-19 $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building CXX object $out
-
-
-#############################################
-# Rule for linking CXX static library.
-
-rule CXX_STATIC_LIBRARY_LINKER__benchmark_Debug
-  command = $PRE_LINK && /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/llvm-ar-19 qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/llvm-ranlib-19 $TARGET_FILE && $POST_BUILD
-  description = Linking CXX static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling CXX files.
-
-rule CXX_COMPILER__benchmark_main_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/clang++-19 $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building CXX object $out
-
-
-#############################################
-# Rule for linking CXX static library.
-
-rule CXX_STATIC_LIBRARY_LINKER__benchmark_main_Debug
-  command = $PRE_LINK && /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/llvm-ar-19 qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/llvm-ranlib-19 $TARGET_FILE && $POST_BUILD
-  description = Linking CXX static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE

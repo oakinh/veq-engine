@@ -2,4 +2,6 @@ add_test( TableTest.HasExpectedElements /home/nikaoh/workspace/github.com/oakinh
 set_tests_properties( TableTest.HasExpectedElements PROPERTIES WORKING_DIRECTORY /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
 add_test( ScanTest.NextBatchIteratesThroughColumns /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests [==[--gtest_filter=ScanTest.NextBatchIteratesThroughColumns]==] --gtest_also_run_disabled_tests)
 set_tests_properties( ScanTest.NextBatchIteratesThroughColumns PROPERTIES WORKING_DIRECTORY /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set( veq_tests_TESTS TableTest.HasExpectedElements ScanTest.NextBatchIteratesThroughColumns)
+add_test( FilterTest.FiltersDataAsExpected /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests [==[--gtest_filter=FilterTest.FiltersDataAsExpected]==] --gtest_also_run_disabled_tests)
+set_tests_properties( FilterTest.FiltersDataAsExpected PROPERTIES WORKING_DIRECTORY /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+set( veq_tests_TESTS TableTest.HasExpectedElements ScanTest.NextBatchIteratesThroughColumns FilterTest.FiltersDataAsExpected)

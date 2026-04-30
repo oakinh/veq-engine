@@ -1,10 +1,10 @@
-Start testing: Apr 29 07:28 CDT
+Start testing: Apr 30 06:32 CDT
 ----------------------------------------------------------
-1/2 Testing: TableTest.HasExpectedElements
-1/2 Test: TableTest.HasExpectedElements
+1/3 Testing: TableTest.HasExpectedElements
+1/3 Test: TableTest.HasExpectedElements
 Command: "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests" "--gtest_filter=TableTest.HasExpectedElements" "--gtest_also_run_disabled_tests"
 Directory: /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan
-"TableTest.HasExpectedElements" start time: Apr 29 07:28 CDT
+"TableTest.HasExpectedElements" start time: Apr 30 06:32 CDT
 Output:
 ----------------------------------------------------------
 Running main() from /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -17,21 +17,21 @@ Note: Google Test filter = TableTest.HasExpectedElements
 [----------] 1 test from TableTest (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (1 ms total)
+[==========] 1 test from 1 test suite ran. (0 ms total)
 [  PASSED  ] 1 test.
 <end of output>
 Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"TableTest.HasExpectedElements" end time: Apr 29 07:28 CDT
+"TableTest.HasExpectedElements" end time: Apr 30 06:32 CDT
 "TableTest.HasExpectedElements" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-2/2 Testing: ScanTest.NextBatchIteratesThroughColumns
-2/2 Test: ScanTest.NextBatchIteratesThroughColumns
+2/3 Testing: ScanTest.NextBatchIteratesThroughColumns
+2/3 Test: ScanTest.NextBatchIteratesThroughColumns
 Command: "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests" "--gtest_filter=ScanTest.NextBatchIteratesThroughColumns" "--gtest_also_run_disabled_tests"
 Directory: /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan
-"ScanTest.NextBatchIteratesThroughColumns" start time: Apr 29 07:28 CDT
+"ScanTest.NextBatchIteratesThroughColumns" start time: Apr 30 06:32 CDT
 Output:
 ----------------------------------------------------------
 Running main() from /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/_deps/googletest-src/googletest/src/gtest_main.cc
@@ -50,8 +50,35 @@ Note: Google Test filter = ScanTest.NextBatchIteratesThroughColumns
 Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"ScanTest.NextBatchIteratesThroughColumns" end time: Apr 29 07:28 CDT
+"ScanTest.NextBatchIteratesThroughColumns" end time: Apr 30 06:32 CDT
 "ScanTest.NextBatchIteratesThroughColumns" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Apr 29 07:28 CDT
+3/3 Testing: FilterTest.FiltersDataAsExpected
+3/3 Test: FilterTest.FiltersDataAsExpected
+Command: "/home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/veq_tests" "--gtest_filter=FilterTest.FiltersDataAsExpected" "--gtest_also_run_disabled_tests"
+Directory: /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan
+"FilterTest.FiltersDataAsExpected" start time: Apr 30 06:32 CDT
+Output:
+----------------------------------------------------------
+Running main() from /home/nikaoh/workspace/github.com/oakinh/personal/cpp/veq-engine/build/asan/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = FilterTest.FiltersDataAsExpected
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from FilterTest
+[ RUN      ] FilterTest.FiltersDataAsExpected
+[       OK ] FilterTest.FiltersDataAsExpected (0 ms)
+[----------] 1 test from FilterTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FilterTest.FiltersDataAsExpected" end time: Apr 30 06:32 CDT
+"FilterTest.FiltersDataAsExpected" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Apr 30 06:32 CDT
