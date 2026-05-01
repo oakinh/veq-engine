@@ -21,7 +21,7 @@ namespace veq {
             const auto& [compare, value] = operation;
             const auto& [columns, start_row, size] = batch;
             std::vector<std::size_t> selection {};
-            for (std::size_t i { start_row }; i < size; ++i) {
+            for (std::size_t i { start_row }; i < size + start_row; ++i) {
                 if (compare(target_column.data[i], value)) {
                     selection.emplace_back(i);
                 }

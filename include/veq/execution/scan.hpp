@@ -22,7 +22,7 @@ namespace veq {
         }
 
         ColumnBatch nextBatch();
-        bool hasNextBatch() const { return last_row_ == table_.id.size(); }
+        bool hasNextBatch() const { return last_row_ < table_.id.size(); }
     private:
         const Table& table_;
         const ColumnViews columns_ {};
