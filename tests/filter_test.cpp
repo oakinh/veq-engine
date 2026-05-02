@@ -39,7 +39,6 @@ TEST_F(FilterTest, FiltersDataWithNonContiguousSelection) {
 }
 
 TEST_F(FilterTest, ReturnsFullSelectionWhenAllRowsMatchWithBatchSize5) {
-    // TODO: Infinite loop
     const veq::FilterOperation<std::greater<>> filter_op { std::greater<>{}, 0 };
     int i {};
     for (; s1_.hasNextBatch(); ++i) {
