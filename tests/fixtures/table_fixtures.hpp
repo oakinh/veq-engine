@@ -4,6 +4,7 @@
 
 namespace veq::test {
     inline veq::Table makeTinyTable() {
+        // Size 10
         return Table {
             .id = {
                 1, 2, 3, 4, 5,
@@ -17,6 +18,14 @@ namespace veq::test {
                 100, 200, 100, 300, 200,
                 100, 400, 300, 100, 200
             }
+        };
+    }
+
+    inline Table makeSizeOneTable() {
+        return Table {
+            .id = { 1 },
+            .age = { 12 },
+            .occupation_id = { 25 }
         };
     }
 }

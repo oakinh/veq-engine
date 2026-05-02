@@ -3,6 +3,7 @@
 #include <cassert>
 #include <veq/storage/table.hpp>
 #include <veq/storage/batch.hpp>
+#include <iostream>
 
 namespace veq {
     class Scan {
@@ -19,6 +20,7 @@ namespace veq {
             , batch_size_{ batch_size }
         {
             assert(batch_size_ <= MAX_BATCH_SIZE);
+            assert(table.id.size() == table.age.size() && table.id.size() == table.occupation_id.size());
         }
 
         ColumnBatch nextBatch();
