@@ -21,10 +21,11 @@ namespace veq {
             const auto& [columns, start_row, size] = batch;
 
             std::size_t i {};
-            for (std::size_t row_idx { start_row }; row_idx < size + start_row; ++row_idx, ++i) {
+            for (std::size_t row_idx { start_row }; row_idx < size + start_row; ++row_idx) {
                 if (compare(target_column.data[row_idx], value)) {
                     // selection stores global table indexes
                     selection_[i] = row_idx;
+                    ++i; // Only increment if data is selected
                 }
             }
 
