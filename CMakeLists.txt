@@ -117,6 +117,7 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
             tests/scan_test.cpp
             tests/filter_test.cpp
             tests/projection_test.cpp
+            tests/pipeline_test.cpp
     )
 
     target_link_libraries(veq_tests

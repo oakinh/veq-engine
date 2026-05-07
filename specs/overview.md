@@ -26,7 +26,6 @@ class IOperator {
 }
 ```
 
-
 ## Batch
 - A set of rows, defined as views over multiple columns
 - It does not own the column memory
