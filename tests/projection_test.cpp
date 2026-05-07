@@ -16,8 +16,8 @@ protected:
 
     veq::SelectedBatch sb0_ {
         .columns = column_views,
-        .size = 4,
-        .selection = selected_indexes
+        .selection = selected_indexes,
+        .size = 4
     };
 
     veq::Projection p0_ {};
