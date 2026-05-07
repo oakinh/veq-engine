@@ -1,4 +1,4 @@
-#include <veq/storage/table.hpp>
+#include <../include/veq/storage/table/table.hpp>
 
 int main() {
     veq::Table table;

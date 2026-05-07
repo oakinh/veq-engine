@@ -1,14 +1,13 @@
 #pragma once
 
 #include <cassert>
-#include <veq/storage/table.hpp>
+#include <veq/storage/table/table.hpp>
 #include <veq/storage/batch.hpp>
-#include <iostream>
 
 namespace veq {
     class Scan {
     public:
-        using ColumnViews = std::array<const ColumnView, TABLE_COLUMN_COUNT>;
+
 
         explicit Scan(const Table& table, std::size_t batch_size = MAX_BATCH_SIZE)
             : table_{ table }
@@ -27,6 +26,7 @@ namespace veq {
         bool hasNextBatch() const { return last_row_ < table_.id.size(); }
     private:
         const Table& table_;
+        // Operator owns the array of ColumnView so that we can return std::spans to it
         const ColumnViews columns_ {};
         std::size_t batch_size_ {};
         std::size_t last_row_ {};

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <veq/storage/table.hpp>
+#include <veq/storage/table/table.hpp>
 
 namespace veq::test {
     inline veq::Table makeTinyTable() {
