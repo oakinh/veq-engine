@@ -50,3 +50,16 @@ struct Batch {
 ## Filter
 - Produces a selection vector.
 - Later we will conditionally produce a selection vector, or materialize.
+
+## Projection
+- Takes either a `ColumnBatch` or a `SelectedBatch`
+- Preserves the selection vector.
+- Does not own any actual table / column memory, only the views
+- Performs no moves or copies
+- Returns:
+  - ```
+    struct ProjectedBatch {
+        std::span columns;
+        std::span selection;
+    }
+```

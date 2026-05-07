@@ -50,13 +50,16 @@ target_sources(veq
         src/storage/batch.cpp
         src/execution/scan.cpp
         src/execution/filter.cpp
+        src/execution/projection.cpp
 
         PUBLIC
         include/veq/storage/column.hpp
-        include/veq/storage/table.hpp
+        include/veq/storage/table/table.hpp
+        include/veq/storage/table/schema.hpp
         include/veq/storage/batch.hpp
         include/veq/execution/scan.hpp
         include/veq/execution/filter.hpp
+        include/veq/execution/projection.hpp
 )
 
 # ------------------------------------------------------------------------------

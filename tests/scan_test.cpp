@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <veq/execution/scan.hpp>
-#include <veq/storage/table.hpp>
+#include <veq/storage/table/table.hpp>
 #include <veq/storage/batch.hpp>
 #include <fixtures/table_fixtures.hpp>
 
@@ -45,7 +45,4 @@ TEST_F(ScanTest, ReturnsBatchWithEntireTableWhenBatchSizeIsGreaterThanTableSize)
     veq::Scan scan { t0_, 11 };
     veq::ColumnBatch batch { scan.nextBatch() };
     EXPECT_EQ(batch.size, t0_.id.size());
-    // for (std::size_t i {}; i < t0_.id.size(); ++i) {
-    //     batch.
-    // }
 }

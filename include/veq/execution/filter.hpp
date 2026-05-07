@@ -3,7 +3,6 @@
 #include <veq/storage/batch.hpp>
 #include <veq/storage/column.hpp>
 
-#include "scan.hpp"
 
 namespace veq {
     template <typename Compare>
@@ -20,24 +19,24 @@ namespace veq {
         SelectedBatch apply(const ColumnBatch& batch, const ColumnView target_column, const FilterOperation<Compare> operation) {
             const auto& [compare, value] = operation;
             const auto& [columns, start_row, size] = batch;
-            std::vector<std::size_t> selection {};
-            for (std::size_t i { start_row }; i < size + start_row; ++i) {
-                if (compare(target_column.data[i], value)) {
-                    selection.emplace_back(i);
+
+            std::size_t i {};
+            for (std::size_t row_idx { start_row }; row_idx < size + start_row; ++row_idx, ++i) {
+                if (compare(target_column.data[row_idx], value)) {
+                    // selection stores global table indexes
+                    selection_[i] = row_idx;
                 }
             }
-
-            selection_ = selection;
 
             return {
                 .columns=batch.columns,
                 .selection=selection_,
-                .size=selection.size()
+                .size=i
             };
 
         }
     private:
         // Buffer, list of indexes
-        std::vector<std::size_t> selection_ {};
+        std::array<std::size_t, MAX_BATCH_SIZE> selection_ {};
     };
 }

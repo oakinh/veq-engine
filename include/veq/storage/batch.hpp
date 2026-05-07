@@ -2,7 +2,7 @@
 
 #include <array>
 #include <span>
-#include <veq/storage/table.hpp>
+#include <veq/storage/table/table.hpp>
 
 namespace veq {
     constexpr std::size_t MAX_BATCH_SIZE = 1024;
@@ -15,7 +15,7 @@ namespace veq {
 
     struct SelectedBatch {
         std::span<const ColumnView> columns {};
-        std::span<const std::size_t> selection {};
-        std::size_t size {};
+        std::span<const std::size_t> selection {}; // Global indexes
+        std::size_t size {}; // Size of selection
     };
 }

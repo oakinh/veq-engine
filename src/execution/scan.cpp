@@ -1,5 +1,5 @@
 #include <veq/storage/batch.hpp>
-#include <veq/storage/table.hpp>
+#include <veq/storage/table/table.hpp>
 #include <veq/storage/batch.hpp>
 #include <veq/execution/scan.hpp>
 

@@ -1,0 +1,25 @@
+#pragma once
+#include <veq/storage/batch.hpp>
+#include <veq/storage/column.hpp>
+
+namespace veq {
+
+struct ProjectedBatch {
+    std::span<const ColumnView> columns;
+    std::span<const std::size_t> selection;
+    std::size_t size;
+};
+
+class Projection {
+public:
+    Projection() = default;
+
+    void setTargetColumns(const ColumnViews columns) { columns_ = columns; };
+
+    ProjectedBatch apply(const SelectedBatch& input);
+
+private:
+    // Doesn't change batch to batch
+    ColumnViews columns_ {};
+};
+}
