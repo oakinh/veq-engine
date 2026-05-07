@@ -6,16 +6,16 @@ class ProjectionTest : public testing::Test {
 protected:
     veq::Table t0_ { veq::test::makeTinyTable() };
 
-    std::vector<veq::ColumnView> column_views {
+    std::vector<veq::ColumnView> column_views_ {
         veq::ColumnView{ t0_.id.data() },
         veq::ColumnView{ t0_.age.data() },
         veq::ColumnView{ t0_.occupation_id.data() }
     };
-    std::vector<std::size_t> selected_indexes { 3, 6, 7 };
+    std::vector<std::size_t> selected_indexes_ { 3, 6, 7 };
 
     veq::SelectedBatch sb0_ {
-        .columns = column_views,
-        .selection = selected_indexes,
+        .columns = column_views_,
+        .selection = selected_indexes_,
         .size = 3
     };
 
