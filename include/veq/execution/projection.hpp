@@ -5,16 +5,16 @@
 namespace veq {
 
 struct ProjectedBatch {
-    std::span<const ColumnView> columns;
-    std::span<const std::size_t> selection;
-    std::size_t size;
+    std::span<const ColumnView> columns {};
+    std::span<const std::size_t> selection {};
+    std::size_t selection_size {};
 };
 
 class Projection {
 public:
     Projection() = default;
 
-    void setTargetColumns(const ColumnViews columns) { columns_ = columns; };
+    void setTargetColumns(const ColumnViews& columns) { columns_ = columns; };
 
     ProjectedBatch apply(const SelectedBatch& input);
 

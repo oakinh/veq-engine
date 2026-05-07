@@ -10,5 +10,5 @@ namespace veq {
     struct ColumnView {
         const std::uint64_t* data;
     };
-    using ColumnViews = std::array<ColumnView, TABLE_COLUMN_COUNT>;
+    using ColumnViews = std::vector<ColumnView>;
 }
