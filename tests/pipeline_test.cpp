@@ -9,7 +9,9 @@
 class PipelineTest : public testing::Test {
 protected:
     veq::Table t0_ { veq::test::makeTinyTable() };
+    veq::Table t1_ {}; // Empty table
     veq::Scan s0_ { t0_, 4};
+    veq::Scan s1_ { t1_, 4 }; // Scan on empty table
     veq::Filter f0_ {};
     veq::Projection p0_ {};
     const veq::FilterOperation<std::greater<>> filter_op0_ { std::greater<>{}, 30 };
@@ -81,4 +83,20 @@ TEST_F(PipelineTest, DeliversExpectedResultFromSmallBatchAndTinyTable) {
         }
     }
     ASSERT_GT(i, 0);
+}
+
+TEST_F(PipelineTest, EmptyTableDoesntCrash) {
+    veq::test::TestMaterializer materializer {};
+    veq::test::PipelineRunOutput output { veq::test::runPipeline<std::greater<>>({
+        .scan=s1_,
+        .filter=f0_,
+        .projection=p0_,
+        .projection_columns=column_views_,
+        .filter_target_column=filter_target_column0_,
+        .filter_op = filter_op0_,
+        .materializer_out = materializer
+        }) };
+    ASSERT_EQ(output.batches_run, 0);
+    std::vector columns { materializer.columns() };
+    ASSERT_EQ(columns.size(), 0);
 }
