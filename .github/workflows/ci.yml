@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - first-pass
+  pull_request:
+    branches:
+      - main
+      - master
+      - first-pass
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Format check
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 19 and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release software-properties-common
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+
+          sudo apt-get install -y \
+            ninja-build \
+            cmake \
+            clang-19 \
+            clang++-19 \
+            clang-tidy-19 \
+            clang-format-19 \
+            libc++-19-dev \
+            libc++abi-19-dev \
+            lld-19
+
+      - name: Configure
+        run: cmake --preset asan
+
+      - name: Check formatting
+        run: cmake --build --preset asan --target format-check
+
+  test:
+    name: ${{ matrix.preset }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          - asan
+          - tsan
+          - release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 19 and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release software-properties-common
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+
+          sudo apt-get install -y \
+            ninja-build \
+            cmake \
+            clang-19 \
+            clang++-19 \
+            clang-tidy-19 \
+            clang-format-19 \
+            libc++-19-dev \
+            libc++abi-19-dev \
+            lld-19
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} -j 2
+
+      - name: Run tests
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure -j 2
+
+  benchmark-build:
+    name: Benchmark build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 19 and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release software-properties-common
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+
+          sudo apt-get install -y \
+            ninja-build \
+            cmake \
+            clang-19 \
+            clang++-19 \
+            clang-tidy-19 \
+            clang-format-19 \
+            libc++-19-dev \
+            libc++abi-19-dev \
+            lld-19
+
+      - name: Configure benchmarks
+        run: cmake --preset bench
+
+      - name: Build benchmarks
+        run: cmake --build --preset bench -j 2
