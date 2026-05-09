@@ -21,6 +21,8 @@ protected:
     };
 };
 
+// These are for testing the entire pipeline of operators together, not just in isolation
+
 TEST_F(PipelineTest, PerformsNoCopies) {
     auto verifyPointerEquality = [] (
             const std::span<const veq::ColumnView> source_columns,
@@ -48,23 +50,35 @@ TEST_F(PipelineTest, PerformsNoCopies) {
 }
 
 TEST_F(PipelineTest, DeliversExpectedResultFromSmallBatchAndTinyTable) {
-    // std::size_t i {};
-    // while (s0_.hasNextBatch()) {
-    //     const veq::ColumnBatch batch { s0_.nextBatch() };
-    //
-    //     const veq::SelectedBatch selected_batch { f0_.apply(batch, filter_target_column0_, filter_op0_) };
-    //     p0_.setTargetColumns(column_views_);
-    //     const veq::ProjectedBatch projected_batch { p0_.apply(selected_batch)};
-    //
-    //     ++i;
-    // }
-    // ASSERT_GT(i, 0);
+    veq::test::TestMaterializer materializer {};
     veq::test::PipelineRunOutput output { veq::test::runPipeline<std::greater<>>({
         .scan=s0_,
         .filter=f0_,
         .projection=p0_,
         .projection_columns=column_views_,
         .filter_target_column=filter_target_column0_,
-        .filter_op = filter_op0_
+        .filter_op = filter_op0_,
+        .materializer_out = materializer
         }) };
+    ASSERT_GT(output.batches_run, 0);
+    std::vector<std::vector<uint64_t>> columns { materializer.columns() };
+    ASSERT_EQ(columns.size(), 3);
+
+    std::vector<std::vector<uint64_t>> expected_output {
+        { 4, 7, 8 }, // id
+        { 40, 35, 40 }, // age
+        { 300, 400, 300 } // occupation_id
+    };
+    std::size_t i {};
+    for (std::size_t col_idx {}; col_idx < columns.size(); ++col_idx) {
+        ++i;
+        const auto& result_column { columns[col_idx] };
+        const auto& expected_column { expected_output[col_idx] };
+        for (std::size_t row_idx {}; row_idx < columns[col_idx].size(); ++row_idx) {
+            const auto& result_val { result_column[row_idx] };
+            const auto& expected_val { expected_column[row_idx] };
+            EXPECT_EQ(result_val, expected_val);
+        }
+    }
+    ASSERT_GT(i, 0);
 }

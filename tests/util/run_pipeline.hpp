@@ -13,13 +13,13 @@ namespace veq::test {
         Scan& scan;
         Filter& filter;
         Projection& projection;
-        std::span<ColumnView>projection_columns;
-        ColumnView filter_target_column;
-        FilterOperation<Compare> filter_op;
+        const ColumnViews& projection_columns;
+        const ColumnView& filter_target_column;
+        const FilterOperation<Compare>& filter_op;
+        TestMaterializer& materializer_out;
     };
 
     struct PipelineRunOutput {
-        TestMaterializer materializer {};
         std::size_t batches_run {};
     };
 
@@ -30,9 +30,9 @@ namespace veq::test {
             projection,
             projection_columns,
             filter_target_column,
-            filter_op
+            filter_op,
+            materializer_out
             ] = inputs;
-        TestMaterializer test_materializer {};
 
         std::size_t i {};
         while (scan.hasNextBatch()) {
@@ -46,12 +46,11 @@ namespace veq::test {
             };
 
             const ProjectedBatch projected_batch { projection.apply(selected_batch)};
-            test_materializer.consume(projected_batch);
+            materializer_out.consume(projected_batch);
             ++i;
         }
 
         return {
-            .materializer = test_materializer,
             .batches_run = i
         };
     }
