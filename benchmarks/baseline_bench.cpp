@@ -38,14 +38,10 @@ static void BM_ColumnScanSum(benchmark::State& state) {
         benchmark::DoNotOptimize(sum);
     }
 
-    state.SetItemsProcessed(
-        static_cast<std::int64_t>(state.iterations() * row_count)
-    );
+    state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
 }
 
-BENCHMARK(BM_ColumnScanSum)
-        ->RangeMultiplier(8)
-        ->Range(batch_size, 1 << 24);
+BENCHMARK(BM_ColumnScanSum)->RangeMultiplier(8)->Range(batch_size, 1 << 24);
 
 // -----------------------------------------------------------------------------
 // Baseline: filter into selection vector
@@ -87,24 +83,22 @@ static void BM_FilterSelectionVector(benchmark::State& state) {
         benchmark::ClobberMemory();
     }
 
-    state.SetItemsProcessed(
-        static_cast<std::int64_t>(state.iterations() * row_count)
-    );
+    state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
 }
 
 // threshold 1  => high selectivity
 // threshold 50 => ~50% selectivity
 // threshold 99 => low selectivity
 BENCHMARK(BM_FilterSelectionVector)
-        ->Args({1024, 1})
-        ->Args({1024, 50})
-        ->Args({1024, 99})
-        ->Args({1 << 16, 1})
-        ->Args({1 << 16, 50})
-        ->Args({1 << 16, 99})
-        ->Args({1 << 24, 1})
-        ->Args({1 << 24, 50})
-        ->Args({1 << 24, 99});
+    ->Args({1024, 1})
+    ->Args({1024, 50})
+    ->Args({1024, 99})
+    ->Args({1 << 16, 1})
+    ->Args({1 << 16, 50})
+    ->Args({1 << 16, 99})
+    ->Args({1 << 24, 1})
+    ->Args({1 << 24, 50})
+    ->Args({1 << 24, 99});
 
 // -----------------------------------------------------------------------------
 // Baseline: projection using selection vector
@@ -145,24 +139,22 @@ static void BM_ProjectWithSelectionVector(benchmark::State& state) {
         benchmark::ClobberMemory();
     }
 
-    state.SetItemsProcessed(
-        static_cast<std::int64_t>(state.iterations() * selection.size())
-    );
+    state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * selection.size()));
 }
 
 // stride 1  => dense projection
 // stride 4  => semi-dense
 // stride 16 => sparse
 BENCHMARK(BM_ProjectWithSelectionVector)
-        ->Args({1024, 1})
-        ->Args({1024, 4})
-        ->Args({1024, 16})
-        ->Args({1 << 16, 1})
-        ->Args({1 << 16, 4})
-        ->Args({1 << 16, 16})
-        ->Args({1 << 24, 1})
-        ->Args({1 << 24, 4})
-        ->Args({1 << 24, 16});
+    ->Args({1024, 1})
+    ->Args({1024, 4})
+    ->Args({1024, 16})
+    ->Args({1 << 16, 1})
+    ->Args({1 << 16, 4})
+    ->Args({1 << 16, 16})
+    ->Args({1 << 24, 1})
+    ->Args({1 << 24, 4})
+    ->Args({1 << 24, 16});
 
 } // namespace
 
