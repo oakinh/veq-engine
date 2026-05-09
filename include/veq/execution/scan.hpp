@@ -19,6 +19,7 @@ namespace veq {
             , batch_size_{ batch_size }
         {
             assert(batch_size_ <= MAX_BATCH_SIZE);
+            assert(batch_size_ > 0);
             assert(table.id.size() == table.age.size() && table.id.size() == table.occupation_id.size());
         }
 

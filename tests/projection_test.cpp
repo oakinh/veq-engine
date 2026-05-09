@@ -31,7 +31,7 @@ TEST_F(ProjectionTest, PerformsZeroCopies) {
     EXPECT_EQ(projected_batch.selection.data(), sb0_.selection.data());
 }
 
-TEST_F(ProjectionTest, ProjectionReturnsOnlySelectedColumns) {
+TEST_F(ProjectionTest, ProjectionReturnsOnlySelectedColumn) {
     p0_.setTargetColumns({ veq::ColumnView{ t0_.id.data() }});
     auto [ columns, selection, selection_size ] { p0_.apply(sb0_) };
 
