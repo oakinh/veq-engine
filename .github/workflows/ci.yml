@@ -1,19 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - master
-      - first-pass
   pull_request:
     branches:
-      - main
       - master
-      - first-pass
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
