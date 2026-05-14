@@ -5,7 +5,7 @@
 #include <numeric>
 #include <vector>
 
-namespace {
+namespace veq::bench {
 
 constexpr std::size_t batch_size = 1024;
 
@@ -22,7 +22,7 @@ constexpr std::size_t batch_size = 1024;
 // - Mostly memory bandwidth / tight-loop limited for large inputs.
 // - Branch-free inner loop.
 //
-static void BM_ColumnScanSum(benchmark::State& state) {
+static void BM_Baseline_ColumnScanSum(benchmark::State& state) {
     const auto row_count = static_cast<std::size_t>(state.range(0));
 
     std::vector<std::uint64_t> column(row_count);
@@ -39,9 +39,15 @@ static void BM_ColumnScanSum(benchmark::State& state) {
     }
 
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
+    state.SetBytesProcessed(static_cast<std::int64_t>(
+        state.iterations() * row_count * sizeof(std::uint64_t)
+        ));
 }
 
-BENCHMARK(BM_ColumnScanSum)->RangeMultiplier(8)->Range(batch_size, 1 << 24);
+BENCHMARK(BM_Baseline_ColumnScanSum)
+    ->RangeMultiplier(2)
+    ->Range(batch_size, 1 << 24)
+    ->Unit(benchmark::kMicrosecond);
 
 // -----------------------------------------------------------------------------
 // Baseline: filter into selection vector
@@ -57,7 +63,7 @@ BENCHMARK(BM_ColumnScanSum)->RangeMultiplier(8)->Range(batch_size, 1 << 24);
 // - Branch behavior depends heavily on selectivity.
 // - Around 50% selectivity is often worse for branch prediction.
 //
-static void BM_FilterSelectionVector(benchmark::State& state) {
+static void BM_Baseline_FilterSelectionVector(benchmark::State& state) {
     const auto row_count = static_cast<std::size_t>(state.range(0));
     const auto threshold = static_cast<std::uint64_t>(state.range(1));
 
@@ -89,7 +95,7 @@ static void BM_FilterSelectionVector(benchmark::State& state) {
 // threshold 1  => high selectivity
 // threshold 50 => ~50% selectivity
 // threshold 99 => low selectivity
-BENCHMARK(BM_FilterSelectionVector)
+BENCHMARK(BM_Baseline_FilterSelectionVector)
     ->Args({1024, 1})
     ->Args({1024, 50})
     ->Args({1024, 99})
@@ -114,7 +120,7 @@ BENCHMARK(BM_FilterSelectionVector)
 // - Dense selection is cache-friendly.
 // - Sparse/random selection later will be much worse.
 //
-static void BM_ProjectWithSelectionVector(benchmark::State& state) {
+static void BM_Baseline_ProjectWithSelectionVector(benchmark::State& state) {
     const auto row_count = static_cast<std::size_t>(state.range(0));
     const auto stride = static_cast<std::size_t>(state.range(1));
 
@@ -145,7 +151,7 @@ static void BM_ProjectWithSelectionVector(benchmark::State& state) {
 // stride 1  => dense projection
 // stride 4  => semi-dense
 // stride 16 => sparse
-BENCHMARK(BM_ProjectWithSelectionVector)
+BENCHMARK(BM_Baseline_ProjectWithSelectionVector)
     ->Args({1024, 1})
     ->Args({1024, 4})
     ->Args({1024, 16})
