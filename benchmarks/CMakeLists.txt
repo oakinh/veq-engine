@@ -25,6 +25,9 @@ set(CMAKE_CXX_CLANG_TIDY "${_OLD_TIDY}")
 # ------------------------------------------------------------------------------
 add_executable(veq_bench
         baseline_bench.cpp
+        filter_bench.cpp
+        projection_bench.cpp
+        scan_bench.cpp
 )
 
 target_link_libraries(veq_bench
