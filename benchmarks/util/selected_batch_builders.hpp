@@ -19,6 +19,8 @@ namespace veq::bench {
         for (const auto& batch : column_batches) {
             selected_batches.push_back(filter.apply(batch, target_column, filter_op));
         }
+
+        return selected_batches;
     }
 }
 
