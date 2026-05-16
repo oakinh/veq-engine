@@ -5,7 +5,7 @@
 #include "table_builders.hpp"
 
 namespace veq::bench {
-    std::vector<ColumnBatch> buildBatches(const Table& table) {
+    inline std::vector<ColumnBatch> buildColumnBatches(const Table& table) {
         std::vector<ColumnBatch> batches {};
         Scan scan { table };
 
