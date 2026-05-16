@@ -9,7 +9,17 @@ namespace veq::bench {
         for (std::size_t i {}; i < size; ++i) {
             table.id.emplace_back(i);
             table.age.emplace_back(shared::generateRandomNumber(12345, 1, 100));
-            table.occupation_id.emplace_back(100 % (i + 1));
+            table.occupation_id.emplace_back(i % 10);
+        }
+        return table;
+    }
+
+    inline Table buildEvenlyDistributedAgeTable(std::size_t size) {
+        Table table {};
+        for (std::size_t i {}; i < size; ++i) {
+            table.id.emplace_back(i);
+            table.age.emplace_back(i % 100);
+            table.occupation_id.emplace_back(i % 10);
         }
         return table;
     }

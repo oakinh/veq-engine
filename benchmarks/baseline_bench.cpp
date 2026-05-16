@@ -104,7 +104,8 @@ BENCHMARK(BM_Baseline_FilterSelectionVector)
     ->Args({1 << 16, 99})
     ->Args({1 << 24, 1})
     ->Args({1 << 24, 50})
-    ->Args({1 << 24, 99});
+    ->Args({1 << 24, 99})
+    ->Unit(benchmark::kMicrosecond);
 
 // -----------------------------------------------------------------------------
 // Baseline: projection using selection vector
