@@ -33,7 +33,7 @@ namespace veq::bench {
 
             owned_selected_batches.emplace_back(
                 columns,
-                std::move(selection),
+                std::move(owned_selection),
                 size);
         }
 
