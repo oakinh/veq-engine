@@ -8,6 +8,8 @@ UseTab: Never
 
 ColumnLimit: 100
 
+BreakTemplateDeclarations: Yes
+
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: false
@@ -31,7 +33,8 @@ SpacesInAngles: Never
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 
-Cpp11BracedListStyle: true
+Cpp11BracedListStyle: Block
 SortIncludes: true
 
 NamespaceIndentation: None
+
