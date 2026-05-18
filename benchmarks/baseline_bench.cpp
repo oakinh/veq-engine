@@ -161,7 +161,8 @@ BENCHMARK(BM_Baseline_ProjectWithSelectionVector)
     ->Args({1 << 16, 16})
     ->Args({1 << 24, 1})
     ->Args({1 << 24, 4})
-    ->Args({1 << 24, 16});
+    ->Args({1 << 24, 16})
+    ->Unit(benchmark::kMicrosecond);
 
 } // namespace
 

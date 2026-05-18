@@ -7,7 +7,7 @@
 #include "util/bench_materializer.hpp"
 
 namespace veq::bench {
-    static void BM_Projection(benchmark::State& state) {
+    static void BM_ProjectAndMaterialize(benchmark::State& state) {
         auto row_count { static_cast<std::size_t>(state.range(0)) };
         auto compare_value { static_cast<uint64_t>(state.range(1)) };
 
@@ -30,10 +30,13 @@ namespace veq::bench {
         projection.setTargetColumns({ ColumnView{table.id.data() } });
 
         BenchMaterializer materializer {};
+        // Reserve up front, to prevent benchmarking vector reallocation
+        materializer.prepare(1, row_count);
+        std::size_t selected_per_iteration {};
 
         for (auto _ : state) {
             std::size_t total_selected {};
-            materializer.reset();
+            materializer.clear(); // Preserves capacity
 
             for (const auto& selected_batch : selected_batches) {
                 ProjectedBatch pj { projection.apply(selected_batch) };
@@ -44,16 +47,21 @@ namespace veq::bench {
                 benchmark::DoNotOptimize(pj.columns.data());
                 benchmark::DoNotOptimize(pj.selection_size);
             }
-
-            const auto cols { materializer.columns() };
-
+            benchmark::DoNotOptimize(materializer.checksum());
+            benchmark::DoNotOptimize(materializer.rowCount());
             benchmark::DoNotOptimize(total_selected);
+            benchmark::ClobberMemory();
+            selected_per_iteration = total_selected;
         }
 
-        state.SetItemsProcessed(state.iterations() * row_count);
-        state.SetBytesProcessed(state.iterations() * row_count * sizeof(std::uint64_t));
+        state.counters["selected_rows"] = static_cast<double>(selected_per_iteration);
+        state.counters["selectivity"] =
+            static_cast<double>(selected_per_iteration) / static_cast<double>(row_count);
+
+        state.SetItemsProcessed(state.iterations() * selected_per_iteration);
+        state.SetBytesProcessed(state.iterations() * selected_per_iteration * sizeof(std::uint64_t));
     }
-    BENCHMARK(BM_Projection)
+    BENCHMARK(BM_ProjectAndMaterialize)
         ->Args({1024, 1})
         ->Args({1024, 50})
         ->Args({1024, 99})

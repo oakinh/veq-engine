@@ -18,7 +18,7 @@ namespace veq::bench {
         Table table {};
         for (std::size_t i {}; i < size; ++i) {
             table.id.emplace_back(i);
-            table.age.emplace_back(i % 100);
+            table.age.emplace_back((i % 100) + 1);
             table.occupation_id.emplace_back(i % 10);
         }
         return table;
