@@ -39,9 +39,8 @@ static void BM_Baseline_ColumnScanSum(benchmark::State& state) {
     }
 
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
-    state.SetBytesProcessed(static_cast<std::int64_t>(
-        state.iterations() * row_count * sizeof(std::uint64_t)
-        ));
+    state.SetBytesProcessed(
+        static_cast<std::int64_t>(state.iterations() * row_count * sizeof(std::uint64_t)));
 }
 
 BENCHMARK(BM_Baseline_ColumnScanSum)
@@ -91,23 +90,22 @@ static void BM_Baseline_FilterSelectionVector(benchmark::State& state) {
 
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
     state.SetBytesProcessed(
-        static_cast<std::int64_t>(state.iterations() * row_count * sizeof(std::uint64_t))
-        );
+        static_cast<std::int64_t>(state.iterations() * row_count * sizeof(std::uint64_t)));
 }
 
 // threshold 1  => high selectivity
 // threshold 50 => ~50% selectivity
 // threshold 99 => low selectivity
 BENCHMARK(BM_Baseline_FilterSelectionVector)
-    ->Args({1024, 1})
-    ->Args({1024, 50})
-    ->Args({1024, 99})
-    ->Args({1 << 16, 1})
-    ->Args({1 << 16, 50})
-    ->Args({1 << 16, 99})
-    ->Args({1 << 24, 1})
-    ->Args({1 << 24, 50})
-    ->Args({1 << 24, 99})
+    ->Args({ 1024, 1 })
+    ->Args({ 1024, 50 })
+    ->Args({ 1024, 99 })
+    ->Args({ 1 << 16, 1 })
+    ->Args({ 1 << 16, 50 })
+    ->Args({ 1 << 16, 99 })
+    ->Args({ 1 << 24, 1 })
+    ->Args({ 1 << 24, 50 })
+    ->Args({ 1 << 24, 99 })
     ->Unit(benchmark::kMicrosecond);
 
 // -----------------------------------------------------------------------------
@@ -152,25 +150,24 @@ static void BM_Baseline_ProjectWithSelectionVector(benchmark::State& state) {
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * selection.size()));
     state.SetBytesProcessed(static_cast<std::int64_t>(
         state.iterations() * selection.size() *
-        (sizeof(std::uint32_t) + sizeof(std::uint64_t) + sizeof(std::uint64_t))
-    ));
+        (sizeof(std::uint32_t) + sizeof(std::uint64_t) + sizeof(std::uint64_t))));
 }
 
 // stride 1  => dense projection
 // stride 4  => semi-dense
 // stride 16 => sparse
 BENCHMARK(BM_Baseline_ProjectWithSelectionVector)
-    ->Args({1024, 1})
-    ->Args({1024, 4})
-    ->Args({1024, 16})
-    ->Args({1 << 16, 1})
-    ->Args({1 << 16, 4})
-    ->Args({1 << 16, 16})
-    ->Args({1 << 24, 1})
-    ->Args({1 << 24, 4})
-    ->Args({1 << 24, 16})
+    ->Args({ 1024, 1 })
+    ->Args({ 1024, 4 })
+    ->Args({ 1024, 16 })
+    ->Args({ 1 << 16, 1 })
+    ->Args({ 1 << 16, 4 })
+    ->Args({ 1 << 16, 16 })
+    ->Args({ 1 << 24, 1 })
+    ->Args({ 1 << 24, 4 })
+    ->Args({ 1 << 24, 16 })
     ->Unit(benchmark::kMicrosecond);
 
-} // namespace
+} // namespace veq::bench
 
 BENCHMARK_MAIN();
