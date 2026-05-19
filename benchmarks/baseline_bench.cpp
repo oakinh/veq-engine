@@ -90,6 +90,9 @@ static void BM_Baseline_FilterSelectionVector(benchmark::State& state) {
     }
 
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * row_count));
+    state.SetBytesProcessed(
+        static_cast<std::int64_t>(state.iterations() * row_count * sizeof(std::uint64_t))
+        );
 }
 
 // threshold 1  => high selectivity
@@ -147,6 +150,10 @@ static void BM_Baseline_ProjectWithSelectionVector(benchmark::State& state) {
     }
 
     state.SetItemsProcessed(static_cast<std::int64_t>(state.iterations() * selection.size()));
+    state.SetBytesProcessed(static_cast<std::int64_t>(
+        state.iterations() * selection.size() *
+        (sizeof(std::uint32_t) + sizeof(std::uint64_t) + sizeof(std::uint64_t))
+    ));
 }
 
 // stride 1  => dense projection
