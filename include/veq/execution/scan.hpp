@@ -8,9 +8,9 @@ namespace veq {
 class Scan {
   public:
     explicit Scan(const Table& table, std::size_t batch_size = MAX_BATCH_SIZE)
-        : table_{table}, columns_{ColumnView{table.id.data()}, ColumnView{table.age.data()},
-                                  ColumnView{table.occupation_id.data()}},
-          batch_size_{batch_size} {
+        : table_{ table }, columns_{ ColumnView{ table.id.data() }, ColumnView{ table.age.data() },
+                                     ColumnView{ table.occupation_id.data() } },
+          batch_size_{ batch_size } {
         assert(batch_size_ <= MAX_BATCH_SIZE);
         assert(batch_size_ > 0);
         assert(table.id.size() == table.age.size() &&

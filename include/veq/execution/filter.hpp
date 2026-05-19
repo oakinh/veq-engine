@@ -5,7 +5,8 @@
 #include <veq/storage/column.hpp>
 
 namespace veq {
-template<typename Compare> struct FilterOperation {
+template<typename Compare>
+struct FilterOperation {
     Compare compare{};
     std::uint64_t value{};
 };
@@ -21,8 +22,8 @@ class Filter {
         const auto& [columns, start_row, size] = batch;
 
         std::size_t i{};
-        const std::size_t end_row{size + start_row};
-        for (std::size_t row_idx{start_row}; row_idx < end_row; ++row_idx) {
+        const std::size_t end_row{ size + start_row };
+        for (std::size_t row_idx{ start_row }; row_idx < end_row; ++row_idx) {
             if (compare(target_column.data[row_idx], value)) {
                 assert(size <= MAX_BATCH_SIZE);
                 // selection stores global table indexes
@@ -31,9 +32,9 @@ class Filter {
             }
         }
 
-        return {.columns = batch.columns,
-                .selection = std::span<const std::size_t>{selection_.data(), i},
-                .size = i};
+        return { .columns = batch.columns,
+                 .selection = std::span<const std::size_t>{ selection_.data(), i },
+                 .size = i };
     }
 
   private:

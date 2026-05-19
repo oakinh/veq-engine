@@ -8,7 +8,8 @@
 #include <veq/storage/column.hpp>
 
 namespace veq::test {
-template<typename Compare> struct PipelineRunInput {
+template<typename Compare>
+struct PipelineRunInput {
     Scan& scan;
     Filter& filter;
     Projection& projection;
@@ -22,22 +23,23 @@ struct PipelineRunOutput {
     std::size_t batches_run{};
 };
 
-template<typename Compare> PipelineRunOutput runPipeline(PipelineRunInput<Compare> inputs) {
+template<typename Compare>
+PipelineRunOutput runPipeline(PipelineRunInput<Compare> inputs) {
     auto [scan, filter, projection, projection_columns, filter_target_column, filter_op,
           materializer_out] = inputs;
 
     std::size_t i{};
     while (scan.hasNextBatch()) {
-        const ColumnBatch batch{scan.nextBatch()};
+        const ColumnBatch batch{ scan.nextBatch() };
 
         projection.setTargetColumns(projection_columns);
-        const SelectedBatch selected_batch{filter.apply(batch, filter_target_column, filter_op)};
+        const SelectedBatch selected_batch{ filter.apply(batch, filter_target_column, filter_op) };
 
-        const ProjectedBatch projected_batch{projection.apply(selected_batch)};
+        const ProjectedBatch projected_batch{ projection.apply(selected_batch) };
         materializer_out.consume(projected_batch);
         ++i;
     }
 
-    return {.batches_run = i};
+    return { .batches_run = i };
 }
 } // namespace veq::test

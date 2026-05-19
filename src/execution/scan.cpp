@@ -4,11 +4,11 @@
 
 namespace veq {
 ColumnBatch Scan::nextBatch() {
-    const std::size_t size{std::min(table_.id.size() - last_row_, batch_size_)};
+    const std::size_t size{ std::min(table_.id.size() - last_row_, batch_size_) };
 
     std::size_t new_start_row = last_row_;
     last_row_ += size;
 
-    return ColumnBatch{std::span{columns_}, new_start_row, size};
+    return ColumnBatch{ std::span{ columns_ }, new_start_row, size };
 }
 } // namespace veq

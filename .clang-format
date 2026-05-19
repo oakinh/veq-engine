@@ -33,7 +33,7 @@ SpacesInAngles: Never
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 
-Cpp11BracedListStyle: Block
+Cpp11BracedListStyle: false
 SortIncludes: true
 
 NamespaceIndentation: None

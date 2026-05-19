@@ -10,7 +10,7 @@ class TestMaterializer {
                 columns_.push_back({});
             }
             for (std::size_t j{}; j < batch.selection_size; ++j) {
-                std::size_t selection_idx{batch.selection[j]};
+                std::size_t selection_idx{ batch.selection[j] };
                 columns_[i].push_back(batch.columns[i].data[selection_idx]);
             }
         }
