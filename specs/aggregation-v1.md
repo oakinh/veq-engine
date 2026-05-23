@@ -4,7 +4,7 @@
   - One integer key, and one aggregate
 - `COUNT(*)` first, `SUM` later
 - Fundamentally, a hash-table-backed group-by operator
-- Blocking operator, not a streaming operator. It consumes all batches and produces one final grouped result
+- Blocking operator, not a streaming operator. It consumes all batches and produces one final grouped result.
 
 ## Input
 - A `ColumnView` for the key
@@ -14,17 +14,35 @@
 ```c++
 class Aggregate { 
 public:
-  void add(ColumnView, SelectionBatch);
+    void consume(ColumnView, SelectionBatch);
+    void consume(ColumnView, ColumnBatch);
+    
+    void finalize();
+    const AggregationResult& getResult() const;
+    
+    void reset();
 
 private:
-  CountHashTable hash_table;
+    CountHashTable hash_table_;
+    CountAggregationResult result_;
 }
+
+struct CountAggregationResult {
+    Column keys_;
+    Column counts_;
+};
 ```
 
 ### `Aggregate` Overview
 - We use a class for operator Aggregate so that it's easier in the future to support other group-by operations
 - `Aggregate` owns the `CountHashTable`
 - `add()` calls `CountHashTable::insert()`
+- `CountAggregationResult` returned by `getResult()` is valid as long as `Aggregate` is in scope, and `finalize()` has been called.
+- `consume()` does not modify `CountAggregationResult`, only `finalize()` does.
+- `reset()` calls `CountHashTable::reset()`
+
+#### consume()
+- 
 
 ```c++
 class CountHashTable {
@@ -45,13 +63,14 @@ private:
 ### CountHashTable Overview
 - Open-addressing
 - Linear probing
-  - 
+
 #### insert()
 - Hashes the key to check buckets_.
   - If no `occupied` bucket with the key exists, the **first** found bucket where `!occupied_`, is used
     - The bucket's `key` is changed to our key, and the `count` is set to 1
   - If an `occupied` bucket with the key exists, we increment `count` by one.
 - If load factor is exceeded, call `rehash(buckets_.size() * 2)`
+
 #### reset()
 - Simply changes all of the buckets to `occupied_ = false`. No other action is needed, because of a key invariant:
   - No bucket data is valid unless `occupied_ == true`.
@@ -73,12 +92,15 @@ struct Bucket {
     bool occupied_ = false;
 };
 ```
+### Bucket Overview
+- Key invariant: If `!occupied_`, no other `Bucket` data is valid, and should not be read.
 
 ## Non-goals
 - Preserving input order
 - Streaming results
 - `SUM`, `AVG`, etc.
 - Values other than `std::uint64_t`
+- Overflow handling of `std::unint64_t count_`
 
 ## V2 Ideas
 - SoA layout
