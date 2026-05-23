@@ -84,7 +84,10 @@ Load factor = number of elements `occupied_` / size of array
   - Insert/move into it
   - Swap/commit
   - If any throw occurs, discard the new table
-
+#### Invariants
+- `buckets_` never exceeds load factor after `insert()` has completed
+- `occupied_count_` always equals the number of `Bucket`s where `occupied_ == true`.
+- After calling `reset()` no Bucket has `occupied_ == true`.
 ```c++
 struct Bucket {
     std::uint64_t key_;
@@ -94,6 +97,7 @@ struct Bucket {
 ```
 ### Bucket Overview
 - Key invariant: If `!occupied_`, no other `Bucket` data is valid, and should not be read.
+- The sum of all `Bucket.count_`s in `CountHashTable::buckets_` always equals the number of rows processed.
 
 ## Non-goals
 - Preserving input order
