@@ -51,6 +51,7 @@ target_sources(veq
         src/execution/scan.cpp
         src/execution/filter.cpp
         src/execution/projection.cpp
+        src/execution/count_aggregation.cpp
 
         PUBLIC
         include/veq/storage/column.hpp
@@ -59,6 +60,7 @@ target_sources(veq
         include/veq/storage/batch.hpp
         include/veq/execution/scan.hpp
         include/veq/execution/filter.hpp
+        include/veq/execution/count_aggregation.hpp
         include/veq/execution/projection.hpp
 )
 
