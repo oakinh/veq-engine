@@ -21,7 +21,7 @@ public:
     void consume(ColumnView key_column, const ColumnBatch&);
     
     void finalize();
-    const CountAggregationResult& getResult() const;
+    const CountAggregationResult& result() const;
     
     void reset();
 
@@ -40,7 +40,7 @@ struct CountAggregationResult {
 - We use a class for operator CountAggregation so that it's easier in the future to support other group-by operations
 - `CountAggregation` owns the `CountHashTable`
 - `add()` calls `CountHashTable::insert()`
-- `CountAggregationResult` returned by `getResult()` is valid as long as `CountAggregation` is in scope, and `finalize()` has been called.
+- `CountAggregationResult` returned by `result()` is valid as long as `CountAggregation` is in scope, and `finalize()` has been called.
 - `consume()` does not modify `CountAggregationResult`, only `finalize()` does.
 - `reset()` calls `CountHashTable::reset()`, and clears result_.
 
