@@ -119,6 +119,7 @@ struct Bucket {
 ### Bucket Overview
 - Key invariant: If `!occupied_`, no other `Bucket` data is valid, and should not be read.
 - The sum of all _occupied_ `Bucket.count_`s in `CountHashTable::buckets_` always equals the number of rows processed since the last `reset()`
+- Downside: While simple for a V1 implementation, this Bucket layout has 7 bytes of padding
 
 #### Invariants
 - If `occupied_`, `count_ > 0`
