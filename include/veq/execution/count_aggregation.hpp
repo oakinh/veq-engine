@@ -18,16 +18,24 @@ namespace veq {
         void reset();
 
     private:
+        static constexpr double MAX_LOAD_FACTOR_ { 0.70 };
+        static constexpr std::size_t GROWTH_FACTOR_ { 2 };
+        static constexpr std::size_t INITIAL_CAPACITY_ { 1024 };
+
         struct Bucket {
-            Key key_;
-            std::uint64_t count_;
+            Key key_ {};
+            std::uint64_t count_ {};
             bool occupied_ = false;
         };
 
+        std::vector<Bucket> buckets_ { INITIAL_CAPACITY_ };
+        std::size_t occupied_count_ {};
+        using Hasher = std::hash<Key>;
+
         void rehash(std::size_t new_capacity);
 
-        std::vector<Bucket> buckets_ {};
-        std::size_t occupied_count_ {};
+        bool exceedsLoadFactor() const;
+
     };
 
     struct CountAggregationResult {
