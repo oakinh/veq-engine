@@ -4,15 +4,11 @@
 #include <functional>
 
 namespace veq {
-    bool CountHashTable::exceedsLoadFactor() const {
-        assert(!buckets_.empty());
-        return static_cast<double>(occupied_count_) / static_cast<double>(buckets_.size())
-            > MAX_LOAD_FACTOR_;
-    }
+    // Public member functions
 
     void CountHashTable::insert(Key key) {
         // Hash the key first
-        const auto hashed_key { std::hash<Key>{}(key) % buckets_.size() };
+        std::size_t hashed_key { hashKey(key, buckets_.size()) };
         assert(hashed_key < buckets_.size() && "hashed_key not in bounds of buckets_");
         // Cap iterations, for loop doesn't maintain access in bounds, the body holds that responsibility...
         // the body supports wrap-around probing.
@@ -41,7 +37,37 @@ namespace veq {
 
             break;
         }
+    }
 
+    void CountHashTable::reset() {
+        for (auto& bucket : buckets_) {
+            bucket.occupied_ = false;
+            bucket.count_ = 0;
+        }
+        occupied_count_ = 0;
+    }
 
+    // Private member functions
+
+    void CountHashTable::rehash(std::size_t new_capacity) {
+        // V1 doesn't worry about exception safety since we are only using fundamental types
+        std::vector<Bucket> new_buckets { new_capacity };
+        for (const auto& bucket : buckets_) {
+            std::size_t hashed_key { hashKey(bucket.key_, new_buckets.size()) };
+            Bucket& new_bucket { new_buckets[hashed_key] };
+            new_bucket = std::move(bucket);
+        }
+        buckets_ = new_buckets;
+    }
+
+    bool CountHashTable::exceedsLoadFactor() const {
+        assert(!buckets_.empty());
+        return static_cast<double>(occupied_count_) / static_cast<double>(buckets_.size())
+            > MAX_LOAD_FACTOR_;
+    }
+
+    std::size_t CountHashTable::hashKey(Key key, std::size_t bucket_size) const {
+        assert(bucket_size > 0 && "Attempted to divide by zero");
+        return std::hash<Key>{}(key) % bucket_size;
     }
 }

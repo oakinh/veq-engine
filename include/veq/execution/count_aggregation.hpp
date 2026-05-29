@@ -32,6 +32,8 @@ namespace veq {
         std::size_t occupied_count_ {};
         using Hasher = std::hash<Key>;
 
+        std::size_t hashKey(Key key, std::size_t bucket_size) const;
+
         void rehash(std::size_t new_capacity);
 
         bool exceedsLoadFactor() const;
