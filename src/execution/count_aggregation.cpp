@@ -66,7 +66,7 @@ namespace veq {
             > MAX_LOAD_FACTOR_;
     }
 
-    std::size_t CountHashTable::hashKey(Key key, std::size_t bucket_size) const {
+    std::size_t CountHashTable::hashKey(Key key, std::size_t bucket_size) {
         assert(bucket_size > 0 && "Attempted to divide by zero");
         return std::hash<Key>{}(key) % bucket_size;
     }
