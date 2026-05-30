@@ -14,6 +14,7 @@ class PipelineTest : public testing::Test {
     veq::Scan s1_{ t1_, 4 }; // Scan on empty table
     veq::Filter f0_{};
     veq::Projection p0_{};
+    veq::CountAggregation ca0_ {};
     const veq::FilterOperation<std::greater<>> filter_op0_{ std::greater<>{}, 30 };
     veq::ColumnView filter_target_column0_{ t0_.age.data() };
     std::vector<veq::ColumnView> column_views_{ veq::ColumnView{ t0_.id.data() },
@@ -50,6 +51,8 @@ TEST_F(PipelineTest, PerformsNoCopies) {
 
 TEST_F(PipelineTest, DeliversExpectedResultFromSmallBatchAndTinyTable) {
     veq::test::TestMaterializer materializer{};
+
+    // TODO: Figure out if there's a way around having to pass template types for compare since it's already part of the struct
     veq::test::PipelineRunOutput output{ veq::test::runPipeline<std::greater<>>(
         { .scan = s0_,
           .filter = f0_,
@@ -94,4 +97,33 @@ TEST_F(PipelineTest, EmptyTableDoesntCrash) {
     ASSERT_EQ(output.batches_run, 0);
     std::vector columns{ materializer.columns() };
     ASSERT_EQ(columns.size(), 0);
+}
+
+TEST_F(PipelineTest, CountAggregationRunYieldsExpectedResult) {
+    std::unordered_map<std::uint64_t, std::uint64_t> expected_count_result {
+        { 300, 2 },
+        { 400, 1 },
+    };
+    veq::test::PipelineRunOutput output { veq::test::runCountAggregationPipeline<std::greater<>>({
+        .scan = s0_,
+        .filter = f0_,
+        .aggregation = ca0_,
+        .filter_target_column = filter_target_column0_,
+        .filter_op = filter_op0_,
+    })};
+
+    ASSERT_GT(output.batches_run, 0);
+
+    const auto& result { ca0_.result() };
+
+    ASSERT_GT(result.keys_.size(), 0); // Make sure it actually ran
+    ASSERT_EQ(expected_count_result.size(), result.keys_.size()); // Invariant
+    for (std::size_t i {}; i < result.keys_.size(); ++i) {
+        auto key { result.keys_[i] };
+        auto count { result.counts_[i] };
+        auto it { expected_count_result.find(key) };
+        if (it == expected_count_result.end()) GTEST_FAIL();
+
+        ASSERT_EQ(it->second, count);
+    }
 }

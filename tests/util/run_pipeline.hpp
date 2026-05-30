@@ -5,7 +5,9 @@
 #include <veq/execution/filter.hpp>
 #include <veq/execution/projection.hpp>
 #include <veq/execution/scan.hpp>
+#include <veq/execution/count_aggregation.hpp>
 #include <veq/storage/column.hpp>
+#include <veq/storage/table/schema.hpp>
 
 namespace veq::test {
 // TODO: Later these inputs need to be thought through more...
@@ -31,6 +33,15 @@ struct RunPipelineAndMaterializeInput {
     const ColumnView& filter_target_column;
     const FilterOperation<Compare>& filter_op;
     TestMaterializer& materializer_out;
+};
+
+template <typename Compare>
+struct RunCountAggregationPipelineInput {
+    Scan& scan;
+    Filter& filter;
+    CountAggregation& aggregation;
+    const ColumnView& filter_target_column;
+    const FilterOperation<Compare>& filter_op;
 };
 
 struct PipelineRunOutput {
@@ -67,6 +78,24 @@ PipelineRunOutput runPipeline(RunPipelineAndMaterializeInput<Compare> inputs) {
         materializer_out.consume(projected_batch);
         ++i;
     }
+
+    return { .batches_run = i };
+}
+
+template <typename Compare>
+PipelineRunOutput runCountAggregationPipeline(RunCountAggregationPipelineInput<Compare> inputs) {
+    auto& [scan, filter, aggregation, filter_target_column, filter_op] = inputs;
+
+    std::size_t i{};
+    while (scan.hasNextBatch()) {
+        const ColumnBatch batch{ scan.nextBatch() };
+        const SelectedBatch selected_batch{ filter.apply(batch, filter_target_column, filter_op) };
+
+        aggregation.consume(selected_batch, static_cast<std::size_t>(ColumnName::OCCUPATION_ID));
+        ++i;
+    }
+
+    aggregation.finalize();
 
     return { .batches_run = i };
 }
