@@ -120,6 +120,7 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
             tests/filter_test.cpp
             tests/projection_test.cpp
             tests/pipeline_test.cpp
+            tests/count_aggregation.cpp
     )
 
     target_link_libraries(veq_tests

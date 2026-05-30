@@ -17,16 +17,19 @@ namespace veq {
 
         void reset();
 
-    private:
-        static constexpr double MAX_LOAD_FACTOR_ { 0.70 };
-        static constexpr std::size_t GROWTH_FACTOR_ { 2 };
-        static constexpr std::size_t INITIAL_CAPACITY_ { 1024 };
-
         struct Bucket {
             Key key_ {};
             std::uint64_t count_ {};
             bool occupied_ = false;
         };
+
+        const std::vector<Bucket>& getBuckets() const { return buckets_; }
+        std::size_t getOccupiedCount() const { return occupied_count_; }
+
+    private:
+        static constexpr double MAX_LOAD_FACTOR_ { 0.70 };
+        static constexpr std::size_t GROWTH_FACTOR_ { 2 };
+        static constexpr std::size_t INITIAL_CAPACITY_ { 1024 };
 
         std::vector<Bucket> buckets_ { INITIAL_CAPACITY_ };
         std::size_t occupied_count_ {};
@@ -37,7 +40,6 @@ namespace veq {
         void rehash(std::size_t new_capacity);
 
         bool exceedsLoadFactor() const;
-
     };
 
     struct CountAggregationResult {
@@ -47,11 +49,11 @@ namespace veq {
 
     class CountAggregation {
     public:
-        void consume(ColumnView key_column, const SelectedBatch&);
-        void consume(ColumnView key_column, const ColumnBatch&);
+        void consume(const SelectedBatch& batch, std::size_t key_column_idx);
+        void consume(const ColumnBatch& batch, std::size_t key_column_idx);
 
         void finalize();
-        const CountAggregationResult& result() const;
+        const CountAggregationResult& result() const { return result_; }
 
         void reset();
 
