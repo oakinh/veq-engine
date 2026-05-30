@@ -49,6 +49,8 @@ namespace veq {
 
     class CountAggregation {
     public:
+        // TODO: Reconsider this interface. Look into modifying the view, or...
+        // ...holding the target column in a buffer like we do for filter and projection
         void consume(const SelectedBatch& batch, std::size_t key_column_idx);
         void consume(const ColumnBatch& batch, std::size_t key_column_idx);
 
