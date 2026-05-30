@@ -31,6 +31,21 @@ protected:
     veq::CountAggregation aggregation {};
 };
 
+class CountHashTableTest : public testing::Test {
+protected:
+    veq::CountHashTable ht0_ {};
+};
+
+// CountAggregation Tests
+
+TEST_F(CountAggregationTest, FinalizeCalledBeforeConsumeMaterializesSizeZeroResult) {
+    aggregation.finalize();
+    const veq::CountAggregationResult& result { aggregation.result() };
+
+    ASSERT_EQ(result.keys_.size(), 0);
+    ASSERT_EQ(result.counts_.size(), 0);
+}
+
 TEST_F(CountAggregationTest, NoDuplicateKeys) {
     aggregation.consume(sb0_, 2);
     aggregation.consume(cb0_, 2);
@@ -98,6 +113,23 @@ TEST_F(CountAggregationTest, CorrectlySumsFromColumnBatch) {
         if (expected_count == expected_output.end()) GTEST_FAIL();
 
         ASSERT_EQ(expected_count->second, result.counts_[i]);
+    }
+}
+
+// CountHashTable Tests
+
+TEST_F(CountHashTableTest, ResetSetsOccupiedCountToZeroAndBoolsToFalse) {
+    for (std::size_t i {}; i < 50; ++i) {
+        ht0_.insert(i);
+    }
+
+    ht0_.reset();
+
+    ASSERT_EQ(ht0_.getOccupiedCount(), 0);
+
+    const auto& buckets { ht0_.getBuckets() };
+    for (const auto& bucket : buckets) {
+        ASSERT_FALSE(bucket.occupied_);
     }
 }
 
