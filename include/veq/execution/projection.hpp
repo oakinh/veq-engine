@@ -14,6 +14,7 @@ class Projection {
   public:
     Projection() = default;
 
+    // TODO: This might be a terrible pattern. Seems error prone when used in things like veq::test::runPipeline
     void setTargetColumns(const ColumnViews& columns) {
         columns_ = columns;
     };
