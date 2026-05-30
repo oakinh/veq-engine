@@ -1,9 +1,47 @@
 #include <veq/execution/count_aggregation.hpp>
+#include <veq/storage/table/table.hpp>
 
 #include <cassert>
 #include <functional>
 
 namespace veq {
+    // CountAggregation
+    // Public member functions
+
+    void CountAggregation::consume(const SelectedBatch& batch, std::size_t key_column_idx) {
+        const auto& [columns, selection, size] = batch;
+
+        assert(size <= selection.size());
+        // Reminder: selection holds global indexes into columns
+        for (std::size_t i {}; i < size; ++i) {
+            auto column_idx { selection[i] };
+
+            assert(key_column_idx < columns.size() && "key_column_idx not in bounds");
+            const auto& key_column_view { columns[key_column_idx] };
+
+            hash_table_.insert(key_column_view.data[column_idx]);
+        }
+    }
+
+    void CountAggregation::consume(const ColumnBatch& batch, std::size_t key_column_idx) {
+        for (std::size_t i { batch.start_row }; i < batch.size; ++i) {
+            const auto& key_column_view { batch.columns[key_column_idx] };
+            hash_table_.insert(key_column_view.data[i]);
+        }
+    }
+
+    void CountAggregation::finalize() {
+        const auto& buckets { hash_table_.getBuckets() };
+        std::size_t occupied_count { hash_table_.getOccupiedCount() };
+        result_.keys_.reserve(occupied_count);
+        result_.counts_.reserve(occupied_count);
+        for (const auto& bucket : buckets) {
+            result_.keys_.emplace_back(bucket.key_);
+            result_.counts_.emplace_back(bucket.count_);
+        }
+    }
+
+    // CountHashTable
     // Public member functions
 
     void CountHashTable::insert(Key key) {

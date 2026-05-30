@@ -17,8 +17,8 @@
 ```c++
 class CountAggregation { 
 public:
-    void consume(ColumnView key_column, const SelectedBatch&);
-    void consume(ColumnView key_column, const ColumnBatch&);
+    void consume(const SelectedBatch& batch, std::size_t key_column_idx);
+    void consume(const ColumnBatch& batch, std::size_t key_column_idx);
     
     void finalize();
     const CountAggregationResult& result() const;
@@ -55,6 +55,7 @@ struct CountAggregationResult {
 
 #### consume()
 - Processes the rows by calling `CountHashTable::insert()` repeatedly
+- key_column_idx is an index into batch.columns, indicating which column we are grouping by.
 
 #### finalize()
 - Clears the old result if any, and materializes only occupied buckets.
