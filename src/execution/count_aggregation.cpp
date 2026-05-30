@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <functional>
+#include <iostream>
 
 namespace veq {
     // CountAggregation
@@ -28,17 +29,26 @@ namespace veq {
             const auto& key_column_view { batch.columns[key_column_idx] };
             hash_table_.insert(key_column_view.data[i]);
         }
+
     }
 
     void CountAggregation::finalize() {
         const auto& buckets { hash_table_.getBuckets() };
         std::size_t occupied_count { hash_table_.getOccupiedCount() };
+        
+        result_.keys_.clear();
+        result_.counts_.clear();
+
         result_.keys_.reserve(occupied_count);
         result_.counts_.reserve(occupied_count);
+
         for (const auto& bucket : buckets) {
-            result_.keys_.emplace_back(bucket.key_);
-            result_.counts_.emplace_back(bucket.count_);
+            if (bucket.occupied_) {
+                result_.keys_.emplace_back(bucket.key_);
+                result_.counts_.emplace_back(bucket.count_);
+            }
         }
+        assert(result_.keys_.size() == result_.counts_.size());
     }
 
     // CountHashTable
@@ -59,6 +69,7 @@ namespace veq {
                 bucket.key_ = key;
                 bucket.count_ = 1;
                 bucket.occupied_ = true;
+                ++occupied_count_;
 
                 if (exceedsLoadFactor()) {
                     rehash(buckets_.size() * GROWTH_FACTOR_);
