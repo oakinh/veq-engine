@@ -31,6 +31,26 @@ protected:
     veq::CountAggregation aggregation {};
 };
 
+TEST_F(CountAggregationTest, NoDuplicateKeys) {
+    aggregation.consume(sb0_, 2);
+    aggregation.consume(cb0_, 2);
+    aggregation.finalize();
+
+    std::unordered_map<std::uint64_t, std::uint64_t> seen_key_tracker {};
+
+    const veq::CountAggregationResult& result { aggregation.result() };
+
+    for (std::size_t i {}; i < result.keys_.size(); ++i) {
+        auto key { result.keys_[i] };
+        ASSERT_EQ(seen_key_tracker.find(key), seen_key_tracker.end());
+        seen_key_tracker.emplace(key, result.counts_[i]);
+    }
+}
+
+TEST_F(CountAggregationTest, CorrectConsumeUsageDoesntThrow) {
+    EXPECT_NO_THROW(aggregation.consume(sb0_, 2));
+}
+
 TEST_F(CountAggregationTest, CorrectlySumsFromSelectedBatch) {
     aggregation.consume(sb0_, 2);
     aggregation.finalize();
