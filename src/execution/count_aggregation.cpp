@@ -60,8 +60,13 @@ namespace veq {
         assert(hashed_key < buckets_.size() && "hashed_key not in bounds of buckets_");
         // Cap iterations, for loop doesn't maintain access in bounds, the body holds that responsibility...
         // the body supports wrap-around probing.
-        for (std::size_t i {}; i < buckets_.size(); ++i) {
-            std::size_t current_index { hashed_key };
+
+
+        for (std::size_t iterations {}, current_index { hashed_key };
+            iterations < buckets_.size();
+            ++iterations, current_index = (current_index + 1) % buckets_.size()) {
+
+            assert(current_index < buckets_.size());
             auto& bucket { buckets_[current_index] };
 
             if (!bucket.occupied_) {
@@ -80,7 +85,6 @@ namespace veq {
                 assert(bucket.occupied_);
                 ++bucket.count_;
             } else {
-                ++current_index;
                 continue;
             }
 
@@ -101,10 +105,14 @@ namespace veq {
     void CountHashTable::rehash(std::size_t new_capacity) {
         // V1 doesn't worry about exception safety since we are only using fundamental types
         std::vector<Bucket> new_buckets { new_capacity };
+        new_buckets.resize(new_capacity);
+
         for (const auto& bucket : buckets_) {
-            std::size_t hashed_key { hashKey(bucket.key_, new_buckets.size()) };
-            Bucket& new_bucket { new_buckets[hashed_key] };
-            new_bucket = std::move(bucket);
+            if (bucket.occupied_) {
+                std::size_t hashed_key { hashKey(bucket.key_, new_buckets.size()) };
+                Bucket& new_bucket { new_buckets[hashed_key] };
+                new_bucket = std::move(bucket);
+            }
         }
         buckets_ = new_buckets;
     }
@@ -117,6 +125,6 @@ namespace veq {
 
     std::size_t CountHashTable::hashKey(Key key, std::size_t bucket_size) {
         assert(bucket_size > 0 && "Attempted to divide by zero");
-        return std::hash<Key>{}(key) % bucket_size;
+        return (std::hash<Key>{}(key) % bucket_size);
     }
 }
