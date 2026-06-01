@@ -6,6 +6,8 @@
 #include <veq/execution/scan.hpp>
 #include <veq/storage/table/table.hpp>
 
+#include "../benchmarks/util/table_builders.hpp"
+
 class PipelineTest : public testing::Test {
   protected:
     veq::Table t0_{ veq::test::makeTinyTable() };
@@ -126,4 +128,22 @@ TEST_F(PipelineTest, CountAggregationRunYieldsExpectedResult) {
 
         ASSERT_EQ(it->second, count);
     }
+}
+
+TEST_F(PipelineTest, CountAggregationDoesntCrashWithLargeTable) {
+    veq::Table table { veq::test::buildEvenlyDistributedAgeAndOccupationTable(1 << 16) };
+    veq::Scan scan { table };
+    veq::test::PipelineRunOutput output { veq::test::runCountAggregationPipeline<std::greater<>>({
+        .scan = scan,
+        .filter = f0_,
+        .aggregation = ca0_,
+        .filter_target_column = veq::ColumnView{ table.age.data() },
+        .filter_op = filter_op0_,
+    })};
+
+    ASSERT_GT(output.batches_run, 0);
+
+    const auto& result { ca0_.result() };
+
+    ASSERT_GT(result.keys_.size(), 0); // Make sure it actually ran
 }

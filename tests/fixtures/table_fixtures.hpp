@@ -16,4 +16,14 @@ inline Table makeTinyTable() {
 inline Table makeSizeOneTable() {
     return Table{ .id = { 1 }, .age = { 12 }, .occupation_id = { 25 } };
 }
+
+inline Table buildEvenlyDistributedAgeAndOccupationTable(std::size_t size) {
+    Table table{};
+    for (std::size_t i{}; i < size; ++i) {
+        table.id.emplace_back(i);
+        table.age.emplace_back((i % 100) + 1);
+        table.occupation_id.emplace_back(i % 10);
+    }
+    return table;
+}
 } // namespace veq::test

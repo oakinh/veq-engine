@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include <unordered_map>
@@ -131,6 +132,32 @@ TEST_F(CountHashTableTest, ResetSetsOccupiedCountToZeroAndBoolsToFalse) {
     for (const auto& bucket : buckets) {
         ASSERT_FALSE(bucket.occupied_);
     }
+}
+
+TEST_F(CountHashTableTest, RehashPreservesElements) {
+    for (std::size_t i { 1 }; i <= 1000; ++i) {
+        ht0_.insert(i);
+    }
+
+    const auto& buckets { ht0_.getBuckets() };
+
+    std::unordered_map<uint64_t, uint64_t> unique_tracker {};
+    std::size_t occupied_count {};
+    std::size_t unoccupied_count {};
+    for (const auto& bucket : buckets) {
+        if (bucket.occupied_) {
+            ASSERT_GE(bucket.key_, 1);
+            ASSERT_LE(bucket.key_, 1000);
+            ASSERT_EQ(bucket.count_, 1);
+            unique_tracker.emplace(bucket.key_, 1);
+            ++occupied_count;
+        } else {
+            ++unoccupied_count;
+        }
+    }
+    ASSERT_EQ(occupied_count, ht0_.getOccupiedCount());
+    ASSERT_EQ(unique_tracker.size(), 1000);
+    ASSERT_TRUE(static_cast<double>(1000) / static_cast<double>(1000 + unoccupied_count) <= 0.70);
 }
 
 // TEST(CountHashTableTest, HappyPath) {
