@@ -1,6 +1,23 @@
 include(FetchContent)
 
 # ------------------------------------------------------------------------------
+# VEQ benchmark compile options
+# ------------------------------------------------------------------------------
+add_library(veq_benchmark_options INTERFACE)
+
+target_compile_features(veq_benchmark_options INTERFACE cxx_std_23)
+
+if(MSVC)
+    target_compile_options(veq_benchmark_options INTERFACE /W4)
+else()
+    target_compile_options(veq_benchmark_options INTERFACE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+# ------------------------------------------------------------------------------
 # Google Benchmark
 # ------------------------------------------------------------------------------
 FetchContent_Declare(
@@ -29,11 +46,13 @@ add_executable(veq_bench
         filter_bench.cpp
         projection_bench.cpp
         scan_bench.cpp
+        count_aggregation_bench.cpp
 )
 
 target_link_libraries(veq_bench
         PRIVATE
         veq::veq
+        veq_benchmark_options
         benchmark::benchmark
 )
 
