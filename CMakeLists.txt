@@ -24,7 +24,17 @@ if(MSVC)
         target_compile_options(veq_options INTERFACE /WX)
     endif()
 else()
-    target_compile_options(veq_options INTERFACE -Wall -Wextra -Wpedantic)
+    target_compile_options(veq_options INTERFACE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wconversion
+        -Wsign-conversion
+        -Wshadow
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Woverloaded-virtual
+    )
     if(VEQ_WARNINGS_AS_ERRORS)
         target_compile_options(veq_options INTERFACE -Werror)
     endif()
@@ -36,7 +46,7 @@ endif()
 add_library(veq STATIC)
 add_library(veq::veq ALIAS veq)
 
-target_link_libraries(veq PUBLIC veq_options)
+target_link_libraries(veq PRIVATE veq_options)
 
 target_include_directories(veq
         PUBLIC
@@ -126,6 +136,7 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
     target_link_libraries(veq_tests
             PRIVATE
             veq::veq
+            veq_options
             GTest::gtest_main
     )
 
