@@ -25,30 +25,37 @@ namespace veq {
     }
 
     void CountAggregation::consume(const ColumnBatch& batch, std::size_t key_column_idx) {
-        for (std::size_t i { batch.start_row }; i < batch.size; ++i) {
+        auto [ columns, start_row, size ] { batch };
+        for (std::size_t i { start_row }; i < size + start_row; ++i) {
             const auto& key_column_view { batch.columns[key_column_idx] };
             hash_table_.insert(key_column_view.data[i]);
         }
+    }
 
+    void CountAggregation::reset() {
+        hash_table_.reset();
+        result_.keys_.clear();
+        result_.counts_.clear();
     }
 
     void CountAggregation::finalize() {
         const auto& buckets { hash_table_.getBuckets() };
         std::size_t occupied_count { hash_table_.getOccupiedCount() };
-        
-        result_.keys_.clear();
-        result_.counts_.clear();
 
         result_.keys_.reserve(occupied_count);
         result_.counts_.reserve(occupied_count);
 
-        for (const auto& bucket : buckets) {
+        for (std::size_t i {}; i < buckets.size(); ++i) {
+            const auto& bucket { buckets[i] };
             if (bucket.occupied_) {
                 result_.keys_.emplace_back(bucket.key_);
                 result_.counts_.emplace_back(bucket.count_);
+                // result_.keys_[i] = bucket.key_;
+                // result_.counts_[i] = bucket.count_;
             }
         }
         assert(result_.keys_.size() == result_.counts_.size());
+        assert(result_.keys_.size() == occupied_count);
     }
 
     // CountHashTable
@@ -79,17 +86,20 @@ namespace veq {
                 if (exceedsLoadFactor()) {
                     rehash(buckets_.size() * GROWTH_FACTOR_);
                 }
+                return;
             } else if (bucket.key_ == key) {
                 // Increment existing key
                 assert(bucket.count_ > 0);
                 assert(bucket.occupied_);
                 ++bucket.count_;
+                return;
             } else {
                 continue;
             }
 
             break;
         }
+        throw std::logic_error("Failed to insert key");
     }
 
     void CountHashTable::reset() {
@@ -107,7 +117,7 @@ namespace veq {
         std::vector<Bucket> new_buckets { new_capacity };
         new_buckets.resize(new_capacity);
 
-        for (const auto& bucket : buckets_) {
+        for (auto& bucket : buckets_) {
             if (bucket.occupied_) {
                 std::size_t hashed_key { hashKey(bucket.key_, new_buckets.size()) };
                 Bucket& new_bucket { new_buckets[hashed_key] };

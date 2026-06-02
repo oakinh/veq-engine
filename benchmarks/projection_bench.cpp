@@ -13,12 +13,12 @@ static void BM_ProjectAndMaterialize(benchmark::State& state) {
 
     // TODO: Build a table with more columns
     Table table{ buildEvenlyDistributedAgeTable(row_count) };
-
+    Scan scan { table };
     // OwnedSelectedBatch is a benchmark-only structure, because SelectedBatch's selection is a
     // view...
     // ...into a std::vector reusable buffer held by the Filter operator
     std::vector<OwnedSelectedBatch> owned_selected_batches{ buildOwnedSelectedBatches(
-        buildColumnBatches(table), ColumnView{ table.age.data() },
+        buildColumnBatches(scan), ColumnView{ table.age.data() },
         FilterOperation(std::greater{}, compare_value)) };
 
     std::vector<SelectedBatch> selected_batches{ convertOwnedSelectedBatches(

@@ -7,6 +7,8 @@
 #include <veq/execution/scan.hpp>
 #include <veq/storage/table/table.hpp>
 
+#include "../benchmarks/util/column_batch_builders.hpp"
+#include "../benchmarks/util/table_builders.hpp"
 #include "../cmake-build-debug/_deps/googletest-src/googletest/include/gtest/gtest.h"
 #include "fixtures/table_fixtures.hpp"
 
@@ -158,6 +160,34 @@ TEST_F(CountHashTableTest, RehashPreservesElements) {
     ASSERT_EQ(occupied_count, ht0_.getOccupiedCount());
     ASSERT_EQ(unique_tracker.size(), 1000);
     ASSERT_TRUE(static_cast<double>(1000) / static_cast<double>(1000 + unoccupied_count) <= 0.70);
+}
+
+TEST_F(CountAggregationTest, CountsAcrossManyBatchesIsCorrect) {
+    std::size_t row_count { 1 << 16 };
+    std::size_t cardinality { 16 };
+
+    veq::Table table { veq::bench::buildVariableCardinalityOccupationTable(row_count, cardinality) };
+    veq::Scan scan { table };
+
+    std::vector<veq::ColumnBatch> batches { veq::bench::buildColumnBatches(scan) };
+
+    std::size_t rows_consumed {};
+    for (const auto& batch : batches) {
+        rows_consumed += batch.size;
+        aggregation.consume(batch, static_cast<std::size_t>(veq::ColumnName::OCCUPATION_ID));
+    }
+    ASSERT_EQ(rows_consumed, row_count);
+
+    aggregation.finalize();
+    const auto& result { aggregation.result() };
+
+    std::uint64_t total {};
+    for (auto count : result.counts_) {
+        total += count;
+    }
+
+    ASSERT_EQ(row_count, total);
+    ASSERT_EQ(std::min(row_count, cardinality), result.keys_.size());
 }
 
 // TEST(CountHashTableTest, HappyPath) {

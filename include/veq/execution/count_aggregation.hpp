@@ -57,7 +57,7 @@ namespace veq {
         void finalize();
         const CountAggregationResult& result() const { return result_; }
 
-        void reset() { hash_table_.reset(); }
+        void reset();
 
     private:
         CountHashTable hash_table_ {};

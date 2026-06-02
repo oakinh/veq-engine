@@ -5,9 +5,8 @@
 #include <veq/storage/batch.hpp>
 
 namespace veq::bench {
-inline std::vector<ColumnBatch> buildColumnBatches(const Table& table) {
+inline std::vector<ColumnBatch> buildColumnBatches(Scan& scan) {
     std::vector<ColumnBatch> batches{};
-    Scan scan{ table };
 
     while (scan.hasNextBatch()) {
         batches.push_back(scan.nextBatch());
