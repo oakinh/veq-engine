@@ -9,7 +9,6 @@
 
 #include "../benchmarks/util/column_batch_builders.hpp"
 #include "../benchmarks/util/table_builders.hpp"
-#include "../cmake-build-debug/_deps/googletest-src/googletest/include/gtest/gtest.h"
 #include "fixtures/table_fixtures.hpp"
 
 class CountAggregationTest : public testing::Test {
