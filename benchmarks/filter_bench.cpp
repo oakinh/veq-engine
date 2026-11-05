@@ -11,7 +11,7 @@ static void BM_FilterAge(benchmark::State& state) {
     uint64_t compare_value{ static_cast<uint64_t>(state.range(1)) };
 
     Table table{ buildEvenlyDistributedAgeTable(row_count) };
-    Scan scan { table };
+    Scan scan{ table };
     std::vector<ColumnBatch> batches{ buildColumnBatches(scan) };
 
     FilterOperation<std::greater<>> filter_op{ std::greater{}, compare_value };

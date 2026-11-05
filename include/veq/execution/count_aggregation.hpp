@@ -1,66 +1,71 @@
 #pragma once
 
-#include <vector>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
-#include <veq/storage/column.hpp>
 #include <veq/storage/batch.hpp>
-
+#include <veq/storage/column.hpp>
 
 namespace veq {
-    class CountHashTable {
-    public:
-        using Key = std::uint64_t;
+class CountHashTable {
+  public:
+    using Key = std::uint64_t;
 
-        void insert(Key key);
+    void insert(Key key);
 
-        void reset();
+    void reset();
 
-        struct Bucket {
-            Key key_ {};
-            std::uint64_t count_ {};
-            bool occupied_ = false;
-        };
-
-        const std::vector<Bucket>& getBuckets() const { return buckets_; }
-        std::size_t getOccupiedCount() const { return occupied_count_; }
-
-    private:
-        static constexpr double MAX_LOAD_FACTOR_ { 0.70 };
-        static constexpr std::size_t GROWTH_FACTOR_ { 2 };
-        static constexpr std::size_t INITIAL_CAPACITY_ { 1024 };
-
-        std::vector<Bucket> buckets_ { INITIAL_CAPACITY_ };
-        std::size_t occupied_count_ {};
-        using Hasher = std::hash<Key>;
-
-        static std::size_t hashKey(Key key, std::size_t bucket_size);
-
-        void rehash(std::size_t new_capacity);
-
-        bool exceedsLoadFactor() const;
+    struct Bucket {
+        Key key_{};
+        std::uint64_t count_{};
+        bool occupied_ = false;
     };
 
-    struct CountAggregationResult {
-        Column keys_;
-        Column counts_;
-    };
+    const std::vector<Bucket>& getBuckets() const {
+        return buckets_;
+    }
+    std::size_t getOccupiedCount() const {
+        return occupied_count_;
+    }
 
-    class CountAggregation {
-    public:
-        // TODO: Reconsider this interface. Look into modifying the view, or...
-        // ...holding the target column in a buffer like we do for filter and projection
-        void consume(const SelectedBatch& batch, std::size_t key_column_idx);
-        void consume(const ColumnBatch& batch, std::size_t key_column_idx);
+  private:
+    static constexpr double MAX_LOAD_FACTOR_{ 0.70 };
+    static constexpr std::size_t GROWTH_FACTOR_{ 2 };
+    static constexpr std::size_t INITIAL_CAPACITY_{ 1024 };
 
-        void finalize();
-        const CountAggregationResult& result() const { return result_; }
+    std::vector<Bucket> buckets_{ INITIAL_CAPACITY_ };
+    std::size_t occupied_count_{};
+    using Hasher = std::hash<Key>;
 
-        void reset();
+    static std::size_t hashKey(Key key, std::size_t bucket_size);
 
-    private:
-        CountHashTable hash_table_ {};
-        CountAggregationResult result_ {};
-    };
-}
+    void rehash(std::size_t new_capacity);
+
+    bool exceedsLoadFactor() const;
+};
+
+struct CountAggregationResult {
+    Column keys_;
+    Column counts_;
+};
+
+class CountAggregation {
+  public:
+    // TODO: Reconsider this interface. Look into modifying the view, or...
+    // ...holding the target column in a buffer like we do for filter and projection
+    void consume(const SelectedBatch& batch, std::size_t key_column_idx);
+    void consume(const ColumnBatch& batch, std::size_t key_column_idx);
+
+    void finalize();
+    const CountAggregationResult& result() const {
+        return result_;
+    }
+
+    void reset();
+
+  private:
+    CountHashTable hash_table_{};
+    CountAggregationResult result_{};
+};
+} // namespace veq
