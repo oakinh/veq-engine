@@ -2,10 +2,10 @@
 #include "test_materializer.hpp"
 #include <cstdint>
 #include <vector>
+#include <veq/execution/count_aggregation.hpp>
 #include <veq/execution/filter.hpp>
 #include <veq/execution/projection.hpp>
 #include <veq/execution/scan.hpp>
-#include <veq/execution/count_aggregation.hpp>
 #include <veq/storage/column.hpp>
 #include <veq/storage/table/schema.hpp>
 
@@ -14,8 +14,7 @@ namespace veq::test {
 // We're sort of copying a ton of references to create a struct
 // Seems quite wonky. It could be that my TS experience is giving me the wrong instincts here
 
-
-template <typename Compare>
+template<typename Compare>
 struct ScanFilterProjectRunInput {
     Scan& scan;
     Filter& filter;
@@ -35,7 +34,7 @@ struct RunPipelineAndMaterializeInput {
     TestMaterializer& materializer_out;
 };
 
-template <typename Compare>
+template<typename Compare>
 struct RunCountAggregationPipelineInput {
     Scan& scan;
     Filter& filter;
@@ -48,7 +47,7 @@ struct PipelineRunOutput {
     std::size_t batches_run{};
 };
 
-template <typename Compare>
+template<typename Compare>
 ProjectedBatch scanFilterProject(ScanFilterProjectRunInput<Compare> inputs) {
     auto& [scan, filter, projection, filter_target_column, filter_op] = inputs;
 
@@ -61,19 +60,14 @@ ProjectedBatch scanFilterProject(ScanFilterProjectRunInput<Compare> inputs) {
 template<typename Compare>
 PipelineRunOutput runPipeline(RunPipelineAndMaterializeInput<Compare> inputs) {
     auto& [scan, filter, projection, projection_columns, filter_target_column, filter_op,
-          materializer_out] = inputs;
+           materializer_out] = inputs;
 
     projection.setTargetColumns(projection_columns);
 
     std::size_t i{};
     while (scan.hasNextBatch()) {
-        ProjectedBatch projected_batch { scanFilterProject<std::greater<>>({
-            scan,
-            filter,
-            projection,
-            filter_target_column,
-            filter_op
-            })};
+        ProjectedBatch projected_batch{ scanFilterProject<std::greater<>>(
+            { scan, filter, projection, filter_target_column, filter_op }) };
 
         materializer_out.consume(projected_batch);
         ++i;
@@ -82,7 +76,7 @@ PipelineRunOutput runPipeline(RunPipelineAndMaterializeInput<Compare> inputs) {
     return { .batches_run = i };
 }
 
-template <typename Compare>
+template<typename Compare>
 PipelineRunOutput runCountAggregationPipeline(RunCountAggregationPipelineInput<Compare> inputs) {
     auto& [scan, filter, aggregation, filter_target_column, filter_op] = inputs;
 

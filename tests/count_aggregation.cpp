@@ -2,9 +2,9 @@
 #include <expected>
 #include <gtest/gtest.h>
 
+#include <ranges>
 #include <unordered_map>
 #include <unordered_set>
-#include <ranges>
 
 #include <veq/execution/count_aggregation.hpp>
 #include <veq/execution/scan.hpp>
@@ -16,37 +16,35 @@
 #include "util/find_collision.hpp"
 
 class CountAggregationTest : public testing::Test {
-protected:
-    veq::Table t0_ { veq::test::makeTinyTable() };
+  protected:
+    veq::Table t0_{ veq::test::makeTinyTable() };
 
     std::vector<veq::ColumnView> column_views_{ veq::ColumnView{ t0_.id.data() },
-                                            veq::ColumnView{ t0_.age.data() },
-                                            veq::ColumnView{ t0_.occupation_id.data() } };
+                                                veq::ColumnView{ t0_.age.data() },
+                                                veq::ColumnView{ t0_.occupation_id.data() } };
 
-    std::vector<std::size_t> selected_indexes { 0, 1, 2, 3, 5, 6, 7 };
+    std::vector<std::size_t> selected_indexes{ 0, 1, 2, 3, 5, 6, 7 };
 
-    veq::SelectedBatch sb0_ {
-        .columns = column_views_,
-        .selection = selected_indexes,
-        .size = selected_indexes.size()
-    };
+    veq::SelectedBatch sb0_{ .columns = column_views_,
+                             .selection = selected_indexes,
+                             .size = selected_indexes.size() };
 
-    veq::Scan scan_ { t0_ };
-    veq::ColumnBatch cb0_ { scan_.nextBatch() };
+    veq::Scan scan_{ t0_ };
+    veq::ColumnBatch cb0_{ scan_.nextBatch() };
 
-    veq::CountAggregation aggregation {};
+    veq::CountAggregation aggregation{};
 };
 
 class CountHashTableTest : public testing::Test {
-protected:
-    veq::CountHashTable ht0_ {};
+  protected:
+    veq::CountHashTable ht0_{};
 };
 
 // CountAggregation Tests
 
 TEST_F(CountAggregationTest, FinalizeCalledBeforeConsumeMaterializesSizeZeroResult) {
     aggregation.finalize();
-    const veq::CountAggregationResult& result { aggregation.result() };
+    const veq::CountAggregationResult& result{ aggregation.result() };
 
     ASSERT_EQ(result.keys_.size(), 0);
     ASSERT_EQ(result.counts_.size(), 0);
@@ -57,13 +55,13 @@ TEST_F(CountAggregationTest, FinalizeIsIdempotent) {
     aggregation.consume(sb0_, 2);
     aggregation.consume(cb0_, 2);
     aggregation.finalize();
-    const auto& first_res { aggregation.result() };
+    const auto& first_res{ aggregation.result() };
     ASSERT_EQ(first_res.keys_.size(), first_res.counts_.size());
-    std::size_t first_finalize_size { first_res.keys_.size() };
+    std::size_t first_finalize_size{ first_res.keys_.size() };
 
     aggregation.finalize();
 
-    const auto& second_res { aggregation.result() };
+    const auto& second_res{ aggregation.result() };
 
     ASSERT_EQ(first_finalize_size, second_res.keys_.size());
     ASSERT_EQ(first_finalize_size, second_res.counts_.size());
@@ -74,12 +72,12 @@ TEST_F(CountAggregationTest, NoDuplicateKeys) {
     aggregation.consume(cb0_, 2);
     aggregation.finalize();
 
-    std::unordered_map<std::uint64_t, std::uint64_t> seen_key_tracker {};
+    std::unordered_map<std::uint64_t, std::uint64_t> seen_key_tracker{};
 
-    const veq::CountAggregationResult& result { aggregation.result() };
+    const veq::CountAggregationResult& result{ aggregation.result() };
 
-    for (std::size_t i {}; i < result.keys_.size(); ++i) {
-        auto key { result.keys_[i] };
+    for (std::size_t i{}; i < result.keys_.size(); ++i) {
+        auto key{ result.keys_[i] };
         ASSERT_EQ(seen_key_tracker.find(key), seen_key_tracker.end());
         seen_key_tracker.emplace(key, result.counts_[i]);
     }
@@ -92,23 +90,21 @@ TEST_F(CountAggregationTest, CorrectConsumeUsageDoesntThrow) {
 TEST_F(CountAggregationTest, CorrectlySumsFromSelectedBatch) {
     aggregation.consume(sb0_, 2);
     aggregation.finalize();
-    const veq::CountAggregationResult& result { aggregation.result() };
+    const veq::CountAggregationResult& result{ aggregation.result() };
 
     ASSERT_EQ(result.keys_.size(), result.counts_.size());
 
     std::unordered_map<std::uint64_t, std::uint64_t> expected_output = {
-        { 100, 3 },
-        { 200, 1 },
-        { 300, 2 },
-        { 400, 1 }
+        { 100, 3 }, { 200, 1 }, { 300, 2 }, { 400, 1 }
     };
 
     ASSERT_EQ(expected_output.size(), result.keys_.size());
 
-    for (std::size_t i {}; i < result.keys_.size(); ++i) {
+    for (std::size_t i{}; i < result.keys_.size(); ++i) {
 
-        const auto& expected_count { expected_output.find(result.keys_[i]) };
-        if (expected_count == expected_output.end()) GTEST_FAIL();
+        const auto& expected_count{ expected_output.find(result.keys_[i]) };
+        if (expected_count == expected_output.end())
+            GTEST_FAIL();
 
         ASSERT_EQ(expected_count->second, result.counts_[i]);
     }
@@ -117,23 +113,21 @@ TEST_F(CountAggregationTest, CorrectlySumsFromSelectedBatch) {
 TEST_F(CountAggregationTest, CorrectlySumsFromColumnBatch) {
     aggregation.consume(cb0_, 2);
     aggregation.finalize();
-    const veq::CountAggregationResult& result { aggregation.result() };
+    const veq::CountAggregationResult& result{ aggregation.result() };
 
     ASSERT_EQ(result.keys_.size(), result.counts_.size());
 
     std::unordered_map<std::uint64_t, std::uint64_t> expected_output = {
-        { 100, 4 },
-        { 200, 3 },
-        { 300, 2 },
-        { 400, 1 }
+        { 100, 4 }, { 200, 3 }, { 300, 2 }, { 400, 1 }
     };
 
     ASSERT_EQ(expected_output.size(), result.keys_.size());
 
-    for (std::size_t i {}; i < result.keys_.size(); ++i) {
+    for (std::size_t i{}; i < result.keys_.size(); ++i) {
 
-        const auto& expected_count { expected_output.find(result.keys_[i]) };
-        if (expected_count == expected_output.end()) GTEST_FAIL();
+        const auto& expected_count{ expected_output.find(result.keys_[i]) };
+        if (expected_count == expected_output.end())
+            GTEST_FAIL();
 
         ASSERT_EQ(expected_count->second, result.counts_[i]);
     }
@@ -142,7 +136,7 @@ TEST_F(CountAggregationTest, CorrectlySumsFromColumnBatch) {
 // CountHashTable Tests
 
 TEST_F(CountHashTableTest, ResetSetsOccupiedCountToZeroAndBoolsToFalse) {
-    for (std::size_t i {}; i < 50; ++i) {
+    for (std::size_t i{}; i < 50; ++i) {
         ht0_.insert(i);
     }
 
@@ -150,22 +144,22 @@ TEST_F(CountHashTableTest, ResetSetsOccupiedCountToZeroAndBoolsToFalse) {
 
     ASSERT_EQ(ht0_.getOccupiedCount(), 0);
 
-    const auto& buckets { ht0_.getBuckets() };
+    const auto& buckets{ ht0_.getBuckets() };
     for (const auto& bucket : buckets) {
         ASSERT_FALSE(bucket.occupied_);
     }
 }
 
 TEST_F(CountHashTableTest, RehashPreservesElements) {
-    for (std::size_t i { 1 }; i <= 1000; ++i) {
+    for (std::size_t i{ 1 }; i <= 1000; ++i) {
         ht0_.insert(i);
     }
 
-    const auto& buckets { ht0_.getBuckets() };
+    const auto& buckets{ ht0_.getBuckets() };
 
-    std::unordered_map<uint64_t, uint64_t> unique_tracker {};
-    std::size_t occupied_count {};
-    std::size_t unoccupied_count {};
+    std::unordered_map<uint64_t, uint64_t> unique_tracker{};
+    std::size_t occupied_count{};
+    std::size_t unoccupied_count{};
     for (const auto& bucket : buckets) {
         if (bucket.occupied_) {
             ASSERT_GE(bucket.key_, 1);
@@ -183,12 +177,12 @@ TEST_F(CountHashTableTest, RehashPreservesElements) {
 }
 
 TEST_F(CountHashTableTest, RehashHandlesCollisions) {
-    const auto [key1, key2] { findCollision(2048) };
+    const auto [key1, key2]{ findCollision(2048) };
     ASSERT_EQ(ht0_.getBuckets().size(), 1024);
 
-    std::unordered_set<std::uint64_t> expected_keys {};
+    std::unordered_set<std::uint64_t> expected_keys{};
 
-    for (std::uint64_t key {}; expected_keys.size() < 715; ++key) {
+    for (std::uint64_t key{}; expected_keys.size() < 715; ++key) {
         if (key != key1 && key != key2) {
             ht0_.insert(key);
             expected_keys.insert(key);
@@ -215,15 +209,15 @@ TEST_F(CountHashTableTest, RehashHandlesCollisions) {
 }
 
 TEST_F(CountAggregationTest, CountsAcrossManyBatchesIsCorrect) {
-    std::size_t row_count { 1 << 16 };
-    std::size_t cardinality { 16 };
+    std::size_t row_count{ 1 << 16 };
+    std::size_t cardinality{ 16 };
 
-    veq::Table table { veq::bench::buildVariableCardinalityOccupationTable(row_count, cardinality) };
-    veq::Scan scan { table };
+    veq::Table table{ veq::bench::buildVariableCardinalityOccupationTable(row_count, cardinality) };
+    veq::Scan scan{ table };
 
-    std::vector<veq::ColumnBatch> batches { veq::bench::buildColumnBatches(scan) };
+    std::vector<veq::ColumnBatch> batches{ veq::bench::buildColumnBatches(scan) };
 
-    std::size_t rows_consumed {};
+    std::size_t rows_consumed{};
     for (const auto& batch : batches) {
         rows_consumed += batch.size;
         aggregation.consume(batch, static_cast<std::size_t>(veq::ColumnName::OCCUPATION_ID));
@@ -231,9 +225,9 @@ TEST_F(CountAggregationTest, CountsAcrossManyBatchesIsCorrect) {
     ASSERT_EQ(rows_consumed, row_count);
 
     aggregation.finalize();
-    const auto& result { aggregation.result() };
+    const auto& result{ aggregation.result() };
 
-    std::uint64_t total {};
+    std::uint64_t total{};
     for (auto count : result.counts_) {
         total += count;
     }
