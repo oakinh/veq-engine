@@ -114,14 +114,27 @@ namespace veq {
 
     void CountHashTable::rehash(std::size_t new_capacity) {
         // V1 doesn't worry about exception safety since we are only using fundamental types
-        std::vector<Bucket> new_buckets { new_capacity };
-        new_buckets.resize(new_capacity);
+        std::vector<Bucket> new_buckets(new_capacity);
+        //new_buckets.resize(new_capacity);
 
         for (auto& bucket : buckets_) {
             if (bucket.occupied_) {
                 std::size_t hashed_key { hashKey(bucket.key_, new_buckets.size()) };
-                Bucket& new_bucket { new_buckets[hashed_key] };
-                new_bucket = std::move(bucket);
+
+
+                for (std::size_t iterations {}, current_idx { hashed_key };
+                    iterations < new_buckets.size();
+                    ++iterations, current_idx = (current_idx + 1) % new_buckets.size()) {
+                    // Very important to handle collisions. Hash equality != actual key equality
+                    Bucket& new_bucket { new_buckets[current_idx] };
+                    if (!new_bucket.occupied_) {
+                        new_bucket = std::move(bucket);
+                        break;
+                    } else if (new_bucket.key_ == bucket.key_) {
+                        ++new_bucket.count_;
+                        break;
+                    }
+                }
             }
         }
         buckets_ = new_buckets;

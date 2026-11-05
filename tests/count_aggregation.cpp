@@ -1,7 +1,10 @@
 #include <algorithm>
+#include <expected>
 #include <gtest/gtest.h>
 
 #include <unordered_map>
+#include <unordered_set>
+#include <ranges>
 
 #include <veq/execution/count_aggregation.hpp>
 #include <veq/execution/scan.hpp>
@@ -10,6 +13,7 @@
 #include "../benchmarks/util/column_batch_builders.hpp"
 #include "../benchmarks/util/table_builders.hpp"
 #include "fixtures/table_fixtures.hpp"
+#include "util/find_collision.hpp"
 
 class CountAggregationTest : public testing::Test {
 protected:
@@ -159,6 +163,38 @@ TEST_F(CountHashTableTest, RehashPreservesElements) {
     ASSERT_EQ(occupied_count, ht0_.getOccupiedCount());
     ASSERT_EQ(unique_tracker.size(), 1000);
     ASSERT_TRUE(static_cast<double>(1000) / static_cast<double>(1000 + unoccupied_count) <= 0.70);
+}
+
+TEST_F(CountHashTableTest, RehashHandlesCollisions) {
+    const auto [key1, key2] { findCollision(2048) };
+    ASSERT_EQ(ht0_.getBuckets().size(), 1024);
+
+    std::unordered_set<std::uint64_t> expected_keys {};
+
+    for (std::uint64_t key {}; expected_keys.size() < 715; ++key) {
+        if (key != key1 && key != key2) {
+            ht0_.insert(key);
+            expected_keys.insert(key);
+        }
+    }
+
+    ht0_.insert(key1);
+    expected_keys.insert(key1);
+
+    ASSERT_EQ(ht0_.getBuckets().size(), 1024);
+
+    ht0_.insert(key2); // Resize triggered
+    expected_keys.insert(key2);
+
+    ASSERT_GT(ht0_.getBuckets().size(), 1024);
+
+    for (const auto& bucket : ht0_.getBuckets()) {
+        if (bucket.occupied_) {
+            ASSERT_EQ(expected_keys.erase(bucket.key_), 1);
+        }
+    }
+
+    ASSERT_TRUE(expected_keys.empty());
 }
 
 TEST_F(CountAggregationTest, CountsAcrossManyBatchesIsCorrect) {
