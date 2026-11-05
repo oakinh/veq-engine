@@ -42,16 +42,16 @@ namespace veq {
         const auto& buckets { hash_table_.getBuckets() };
         std::size_t occupied_count { hash_table_.getOccupiedCount() };
 
-        result_.keys_.reserve(occupied_count);
-        result_.counts_.reserve(occupied_count);
+        result_.keys_.resize(occupied_count);
+        result_.counts_.resize(occupied_count);
 
+        std::size_t result_idx {};
         for (std::size_t i {}; i < buckets.size(); ++i) {
             const auto& bucket { buckets[i] };
             if (bucket.occupied_) {
-                result_.keys_.emplace_back(bucket.key_);
-                result_.counts_.emplace_back(bucket.count_);
-                // result_.keys_[i] = bucket.key_;
-                // result_.counts_[i] = bucket.count_;
+                result_.keys_[result_idx] = bucket.key_;
+                result_.counts_[result_idx] = bucket.count_;
+                ++result_idx;
             }
         }
         assert(result_.keys_.size() == result_.counts_.size());

@@ -52,6 +52,23 @@ TEST_F(CountAggregationTest, FinalizeCalledBeforeConsumeMaterializesSizeZeroResu
     ASSERT_EQ(result.counts_.size(), 0);
 }
 
+TEST_F(CountAggregationTest, FinalizeIsIdempotent) {
+    aggregation.reset();
+    aggregation.consume(sb0_, 2);
+    aggregation.consume(cb0_, 2);
+    aggregation.finalize();
+    const auto& first_res { aggregation.result() };
+    ASSERT_EQ(first_res.keys_.size(), first_res.counts_.size());
+    std::size_t first_finalize_size { first_res.keys_.size() };
+
+    aggregation.finalize();
+
+    const auto& second_res { aggregation.result() };
+
+    ASSERT_EQ(first_finalize_size, second_res.keys_.size());
+    ASSERT_EQ(first_finalize_size, second_res.counts_.size());
+}
+
 TEST_F(CountAggregationTest, NoDuplicateKeys) {
     aggregation.consume(sb0_, 2);
     aggregation.consume(cb0_, 2);
