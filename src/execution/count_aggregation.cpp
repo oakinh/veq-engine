@@ -137,7 +137,7 @@ namespace veq {
                 }
             }
         }
-        buckets_ = new_buckets;
+        buckets_ = std::move(new_buckets);
     }
 
     bool CountHashTable::exceedsLoadFactor() const {
