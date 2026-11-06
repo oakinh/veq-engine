@@ -4,6 +4,9 @@
 
 namespace veq {
 
+    /* TODO: DB 7.2 will likely require moving away from these isolated operator-named batches.
+     * ProjectedBatch and SelectedBatch are structurally equivalent
+     */
 struct ProjectedBatch {
     std::span<const ColumnView> columns{};
     std::span<const std::size_t> selection{};
@@ -11,6 +14,10 @@ struct ProjectedBatch {
 };
 
 class Projection {
+    // This operator is responsible for modifying (excluding) what columns downstream operators can see
+    // In a table with id, age, and occupation, SELECT id, age would then require this operator to only output those columns...
+    // ...and to exclude the occupation column.
+    // This saves us from materializing or performing other work on columns we don't actually want.
   public:
     Projection() = default;
 
@@ -20,6 +27,7 @@ class Projection {
         columns_ = columns;
     };
 
+    // No new buffer is allocated, no values are read or copied. Only a different view of data is produced.
     ProjectedBatch apply(const SelectedBatch& input);
 
   private:
