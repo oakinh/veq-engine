@@ -11,30 +11,48 @@ For every record in the build side table with a match in the probe side table of
 ```c++
 class HashJoin {
 public:
-    void build(ProjectedBatch& build_batch);
-    JoinedBatch probe(ProjectedBatch& probe_batch); // Should not be called before build side has received all batches
+    HashJoin(int expected_build_rows) :
+        expected_build_rows_(expected_build_rows)
+    {};
+    void build(const ProjectedBatch& build_batch);
+    ProbeOutput probe(const ProjectedBatch& batch); 
+    void resetHashTable();
 private:
     using SelectedColumnView = std::pair<const ColumnView, std::vector<std::size_t>;
     using JoinedBatchBuffer = std::array<SelectedColumnView, MAX_BATCH_SIZE>;
-    using JoinedBatch = std::span<SelectedColumnView> selection; // We will use .subspan if the joined_batch_buffer isn't fully utilized.
+    using JoinedBatch = std::span<SelectedColumnView>; // We will use .subspan if the joined_batch_buffer isn't fully utilized.
     
-    std::unordered_map<Key, std::vector<RecordId> hash_table {};
+    struct ProbeOutput {
+        JoinedBatch batch;
+        int rows_remaining {}; // If 0, execution may continue by first calling loadProbeBatch again
+    };
     
-    JoinedBatchBuffer joined_batch_buffer {};
+    int expected_build_rows_ {};
+    std::unordered_map<Key, std::vector<RecordId> hash_table_ {};
+    std::size_t batch_idx_ {};
+    std::size_t record_idx_ {};
+    
+    JoinedBatchBuffer joined_batch_buffer_ {};
 };
 
 ```
 
 ### The algorithm, in two phases
 #### Build Phase
-The smaller table is selected to use in the construction of a hash-table. We choose the smaller table (while providing an override) to ensure our build-side table fits into memory as often as possible. When it does not fit into memory, spill over behavior to disk is needed, which we will not be implementing in this pass.
+The smaller table should typically be provided during the build phase. We prefer the smaller table to ensure our build-side table fits into memory as often as possible. When it does not fit into memory, spill over behavior to disk is needed, which we will not be implementing in this pass.
 
 #### The Probe Phase
+As a check for correct interface usage, `probe()` will check that `hash_table_.size() == expected_build_rows_`.
+
 We will then iterate over the probe side table, looking up the join attributes (typically foreign key) in our hash-table. If found, for every RecordId in the value, we output a row.
+
+If a matching join has more than 1024 (batch size) records, then we will output in ProbeOutput the rows_remaining, and those rows can be supplied upon a subsequent call to `probe()`. Internally, we store both the last processed `batch_idx_` to index the provided `ProjectedBatch`, and the `record_idx_` to index the corresponding `std::vector<RecordId>` in the `hash_table_`.
+
 We are opting for _late materialization_, so we will be outputing only the RecordIds themselves, and not copying the entire record.
 
 #### How The Current System Will Need To Be Extended
-- More than one table will need to be added
+- Ability to have more than one table
+- Proper handling of a **blocking operator**
 
 #### Call Order of Operators
 DB 7.2 calls for implementing query planning. Operator call order at that time will not be static. For now, we will use this call order.
