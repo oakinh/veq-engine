@@ -356,5 +356,6 @@ In rough order that I plan to tackle them:
 [The Design and Implementation of Modern Column-Oriented Database Systems](https://stratos.seas.harvard.edu/publications/design-and-implementation-modern-column-oriented-database-systems)
 [CMU 15-445 -- Spring 2026](https://15445.courses.cs.cmu.edu/spring2026/schedule.html)
 [ClickHouse -- Architecture Overview](https://github.com/ClickHouse/docs-reference/blob/master/docs/en/development/architecture.md)
+
 Additional implementation details are available in [`specs/`](specs/).
 
