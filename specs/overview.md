@@ -40,7 +40,7 @@ struct Batch {
 - `end_row` = `start_row` + `size`
 - rows covered = `[start_row, end_row)`
 - Batch capacity target = 1024. `size` <= 1024.
-- Selection vector stores relative indices within the batch: 0 <= idx < size
+- Selection vector stores global indices 
 - Selection vector is not guaranteed to be non-empty.
 
 ## Scan
