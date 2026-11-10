@@ -13,9 +13,9 @@ Not only does this contain implementation C++23 code, but it also contains:
 
 ## Motivation
 
-I wanted to create a vectorized execution engine after my encounter with the weaknesses of row-oriented databases at GoodParty.org when I tried to run analytical queries on a Postgres instance holding the national voter file and added demographic information. 
+I wanted to create a vectorized execution engine after my encounter with the weaknesses of row-oriented databases in my job at GoodParty.org when I tried to run analytical queries on a Postgres instance holding the national voter file enriched with voter demographic information. 
 
-The column-oriented architecture appealed to me, since I already had a fondness for performance optimization, and for the benefits of the struct-of-arrays and data-oriented design approach. Looking Glass Studio's Thief: The Dark Project (1998) is an old-school inspiration of this architectural ethos for me with its early Entity Component System.
+The column-oriented architecture appealed to me, since I already had a fondness for the benefits of the struct-of-arrays and data-oriented design approach. Looking Glass Studio's Thief: The Dark Project (1998) is an old-school inspiration of this architectural ethos for me with its early Entity Component System.
 
 ## Current Implementation
 
@@ -35,98 +35,27 @@ The current data model uses three `std::uint64_t` columns: `id`, `age`, and `occ
 
 
                      veq-engine: Execution Architecture
-```c++
-+--------------------------------------------------------------+
-|                           Table                              |
-|                                                              |
-|  id:             Column (std::vector<uint64_t>)              |
-|  age:            Column (std::vector<uint64_t>)              |
-|  occupation_id:  Column (std::vector<uint64_t>)              |
-|                                                              |
-|                   Owns column memory                         |
-+-----------------------------+--------------------------------+
-                              |
-                              v
-                     +----------------+
-                     |      Scan      |
-                     |  nextBatch()   |
-                     +--------+-------+
-                              |
-                              v
-                   +----------------------+
-                   |     ColumnBatch      |
-                   |                      |
-                   | Non-owning views     |
-                   | start_row, size      |
-                   | max 1,024 rows       |
-                   +----------+-----------+
-                              |
-                 +------------+-----------------+
-                 |                              |
-                 v                              |
-        +------------------+                    |
-        |      Filter      |                    |
-        |    apply(...)    |                    |
-        +--------+---------+                    |
-                 |                              |
-                 v                              |
-        +-------------------------+             |
-        |      SelectedBatch      |             |
-        |                         |             |
-        | Non-owning column views |             |
-        | Selection vector        |             |
-        | (global row indexes)    |             |
-        +-------------+-----------+             |
-                      |                         |
-             +--------+------------+            |
-             |                     |            |
-             v                     |            |
-      +-------------+              |            |
-      | Projection  |              |            |
-      |  apply()    |              |            |
-      +------+------+              |            |
-             |                     |            |
-             v                     |            |
-   +-------------------+           |            |
-   |   ProjectedBatch  |           |            |
-   |                   |           |            |
-   | Column views      |           |            |
-   | Selection vector  |           |            |
-   +---------+---------+           |            |
-             |                     |            |
-             v                     |            |
-   +-------------------+           |            |
-   | TestMaterializer  |           |            |
-   | (test utility)    |           |            |
-   | Copies selected   |           |            |
-   | values into       |           |            |
-   | owned columns     |           |            |
-   +-------------------+           |            |
-                                   v            v
-                             +----------------------+
-                             |   CountAggregation   |
-                             |                      |
-                             | consume(SelectedBatch)|
-                             | consume(ColumnBatch) |
-                             +----------+-----------+
-                                        |
-                                        v
-                             +----------------------+
-                             |    CountHashTable    |
-                             |                      |
-                             | Open addressing      |
-                             | Linear probing       |
-                             | Key -> group count   |
-                             +----------+-----------+
-                                        |
-                                        | finalize()
-                                        v
-                             +----------------------+
-                             | CountAggregationResult|
-                             |                      |
-                             | keys_:   Column      |
-                             | counts_: Column      |
-                             +----------------------+
+```mermaid
+flowchart LR
+    T["Table<br/>Owns column memory<br/>id, age, occupation_id"]
+    S["Scan<br/>nextBatch()"]
+    CB["ColumnBatch<br/>Non-owning views<br/>≤1024 rows"]
+    F["Filter"]
+    SB["SelectedBatch<br/>Views + selection vector"]
+    P["Projection"]
+    PB["ProjectedBatch<br/>Views + selection vector"]
+    M["TestMaterializer<br/>Copies into owned columns"]
+    A["CountAggregation<br/>consume()"]
+    H["CountHashTable<br/>Open addressing<br/>Linear probing"]
+    R["CountAggregationResult<br/>keys_ + counts_"]
+
+    T --> S --> CB
+    CB --> F --> SB
+    SB --> P --> PB --> M
+    CB --> A
+    SB --> A
+    A --> H
+    H -->|"finalize()"| R
 ```
 
 ### Storage and Memory Layout
@@ -138,7 +67,7 @@ This SoA approach allows me to execute mock-queries in a column-oriented fashion
 
 Applicable operators (ex: `Filter`, `Scan`) hold a private scratch buffer that is continually over-written with each processed batch. Otherwise, new arrays would have to be allocated and returned on every call. My approach dramatically reduces memory allocations, while introducing the need for careful awareness of memory lifetimes, and exactly when a buffer will be over-written.
 
-The operator then returns a view (std::span) to the caller into this private scratch buffer. Additionally, a `ColumnView`, which is simply a pointer to the corresponding array in the original `Table` is returned and passed downstream as well.
+The operator then returns a view (`std::span`) to the caller into this private scratch buffer. Additionally, a `ColumnView`, which is simply a pointer to the corresponding array in the original `Table` is returned and passed downstream as well.
 
 Furthermore, this engine implements **late materialization**, so all each operator is passing downstream is a selection of global indices into the table. The table owns the data all the way until materialization occurs, and everyone else is simply viewing it in the meantime. No copy or move of actual table-data is performed until the data is _materialized_.
 
@@ -185,12 +114,12 @@ I chose to implement with selection vectors and late materialization, because I 
 ### Decision: Non-owning batch views and buffer reuse
 Each operator writes it's output to a private scratch buffer that is continually re-used. Non-owning views (`std::span`'s) are returned to the caller, rather than incurring a move or copy of the selected indices on every operator execution function call. This means memory allocation for our indices during execution only has to happen once per operator.
 
-Furthermore, the buffers are never resized, as that would require repeated reallocations if the size of the batch were to not be consistent, again improving performance. This does mean that callers need to be given a limited view of the scratch buffer (`std::span`'s `.subspan()` comes in handy here), lest they read beyond the bounds of what is valid data at that time.
+Furthermore, the buffers are never resized, as that would require repeated reallocations if the size of the batch were to not be consistent, again improving performance. This **does** mean that callers need to be given a limited view of the scratch buffer (`std::span`'s `.subspan()` comes in handy here), lest they read beyond the bounds of what is valid data at that time.
 
 ### Decision: Hash aggregation's open addressing and linear probing
-Our custom hash-table implementation forgoes STL's std::unordered_map's design choice of linked-lists and uses open addressing and linear probing (described briefly above in `Hash Aggregation`) with the aim of avoiding the poor-cache locality and dependent memory accesses of pointer chasing associated with linked lists. Instead, upon collision, the index is incremented until an open bucket is found (including if it has to wrap around back to the beginning of the array).
+Our custom hash-table implementation forgoes STL's `std::unordered_map`'s design choice of linked-lists and uses open addressing and linear probing (described briefly above in `Hash Aggregation`) with the aim of avoiding the poor-cache locality and dependent memory accesses of pointer chasing associated with linked lists. Instead, upon collision, the index is incremented until an open bucket is found (including if it has to wrap around back to the beginning of the array).
 
-While we retain the performance benefit of our data being contiguous, it does mean that collisions can increase as the number of free array indices that would not result in a collision decrease. A planned future benchmark and technical writeup is on the performance characterists of std::unordered_map vs our current custom implementation, and other custom hash table implementations.
+While we retain the performance benefit of our data being contiguous, it does mean that collisions can increase as the number of free array indices that would not result in a collision decrease. A planned future benchmark and technical writeup is on the performance characterists of `std::unordered_map` vs our current custom implementation, and other custom hash table implementations.
 
 ## Performance and Benchmarks
 
@@ -351,11 +280,11 @@ In rough order that I plan to tackle them:
 
 ## Further Reading and References
 
-[MonetDB/X100: Hyper-Pipelining Query Execution](https://ir.cwi.nl/pub/16497/)
-[DuckDB -- Execution Format](https://duckdb.org/docs/current/internals/vector)
-[The Design and Implementation of Modern Column-Oriented Database Systems](https://stratos.seas.harvard.edu/publications/design-and-implementation-modern-column-oriented-database-systems)
-[CMU 15-445 -- Spring 2026](https://15445.courses.cs.cmu.edu/spring2026/schedule.html)
-[ClickHouse -- Architecture Overview](https://github.com/ClickHouse/docs-reference/blob/master/docs/en/development/architecture.md)
+- [MonetDB/X100: Hyper-Pipelining Query Execution](https://ir.cwi.nl/pub/16497/)
+- [DuckDB -- Execution Format](https://duckdb.org/docs/current/internals/vector)
+- [The Design and Implementation of Modern Column-Oriented Database Systems](https://stratos.seas.harvard.edu/publications/design-and-implementation-modern-column-oriented-database-systems)
+- [CMU 15-445 -- Spring 2026](https://15445.courses.cs.cmu.edu/spring2026/schedule.html)
+- [ClickHouse -- Architecture Overview](https://github.com/ClickHouse/docs-reference/blob/master/docs/en/development/architecture.md)
 
 Additional implementation details are available in [`specs/`](specs/).
 
