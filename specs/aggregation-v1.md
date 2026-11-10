@@ -55,7 +55,7 @@ struct CountAggregationResult {
 
 #### consume()
 - Processes the rows by calling `CountHashTable::insert()` repeatedly
-- key_column_idx is an index into batch.columns, indicating which column we are grouping by.
+- key_column_idx is an index into batch columns, indicating which column we are grouping by.
 
 #### finalize()
 - Clears the old result if any, and materializes only occupied buckets.
