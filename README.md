@@ -15,7 +15,7 @@ Not only does this contain implementation C++23 code, but it also contains:
 
 I wanted to create a vectorized execution engine after my encounter with the weaknesses of row-oriented databases in my job at GoodParty.org when I tried to run analytical queries on a Postgres instance holding the national voter file enriched with voter demographic information. 
 
-The column-oriented architecture appealed to me, since I already had a fondness for the benefits of the struct-of-arrays and data-oriented design approach. Looking Glass Studio's Thief: The Dark Project (1998) is an old-school inspiration of this architectural ethos for me with its early Entity Component System.
+The column-oriented architecture appealed to me, since I already had a fondness for the benefits of the struct-of-arrays and data-oriented design approach. Looking Glass Studios' Thief: The Dark Project (1998) is an old-school inspiration of this architectural ethos for me with its early Entity Component System.
 
 ## Current Implementation
 
@@ -59,13 +59,13 @@ flowchart LR
 ```
 
 ### Storage and Memory Layout
-This isn't a storage engine, so my storage representation is overly simplistic. A `Table` is represented by a struct of arrays (SoA). Each array is a contiguous `Column` of homogenous data. For now, all data is typed as `std::uint64_t`, though I plan to expand this later.
+This isn't a storage engine, so my storage representation is overly simplistic. A `Table` is represented by a struct of arrays (SoA). Each array is a contiguous `Column` of homogeneous data. For now, all data is typed as `std::uint64_t`, though I plan to expand this later.
 This SoA approach allows me to execute mock-queries in a column-oriented fashion, and reap the performance benefits that come with that like:
 - Cache locality over a column
 - SIMD (single-instruction, multiple data) opportunities
 - And perhaps later, compression
 
-Applicable operators (ex: `Filter`, `Scan`) hold a private scratch buffer that is continually over-written with each processed batch. Otherwise, new arrays would have to be allocated and returned on every call. My approach dramatically reduces memory allocations, while introducing the need for careful awareness of memory lifetimes, and exactly when a buffer will be over-written.
+Applicable operators (ex: `Filter`) hold a private scratch buffer that is continually over-written with each processed batch.
 
 The operator then returns a view (`std::span`) to the caller into this private scratch buffer. Additionally, a `ColumnView`, which is simply a pointer to the corresponding array in the original `Table` is returned and passed downstream as well.
 
@@ -74,21 +74,23 @@ Furthermore, this engine implements **late materialization**, so all each operat
 ### Batch Processing
 Data is processed in batches. With our streaming operators (discussed in "Operator Execution" below), data moves through the pipeline as it is scanned from the `Table`. Each batch is a maximum size of **1,024 rows**, which is currently a somewhat arbitrary placeholder value, to be compared and benchmarked in a future write-up.
 
-Global indices are produced, which do not require any calculations against a base index as they would if they were offsets. This means they can be used directly against the original `Column` pointed to by the `ColumnView` as is.
+Global indices are produced, which do not require any calculations against a base index as they would if they were offsets. This means they can be used directly against the original `Column` pointed to by the `ColumnView`.
 
 Currently, each operator produces a batch specific to itself, `ColumnBatch`, `SelectedBatch`, `ProjectedBatch`, but this is a highly inflexible model, and does not easily facilitate variable operator execution order, and will be changed.
 
 ### Operator Execution
 #### Execution Orchestration Overview
-Each downstream operator indirectly pulls from the one upstream of it. Operators possess a member-function that takes input from the output of the operator upstream of it (except in the case of `Scan`, from the table itself), usually called `apply()`, that then returns that processed batch for the next downstream operator.
+The operators currently require external orchestration for the flow of execution to continue. I am considering a refactor where each operator pulls from the one upstream of it.
+
+Currently, operators possess a member-function that takes input from the output of the operator upstream of it (except in the case of `Scan`, from the table itself), usually called `apply()`. `apply()` then returns that processed batch that can be passed by the orchestrator to the next downstream operator.
 
 #### Blocking operators
 Some operators, by nature of their operation, must possess _all_ the data relevant to the query before they can return results downstream.
 Current blocking operators:
-- `HashJoin`
+- `HashJoin` (in progress)
 - `CountAggregation`
 
-Both of these operators also _materialize_ the views provided to them as part of their execution.
+The `HashJoin` operator also _materializes_ the view provided to it as part of its execution.
 
 #### Streaming operators
 Other operators do not require all the relevant data to begin their operation, and instead can receive, execute, and return data downstream in batches.
@@ -98,9 +100,9 @@ Current streaming operators:
 - `Projection`
 
 ### Hash Aggregation
-`CountHashTable`, is the custom-hash table implementation backing `CountAggregate`. This separation of concerns allows me to more easily support other group-by operators in the future. These classes are used to perform what would be a COUNT(*), GROUP BY query. For now, it only supports one integer key.
+`CountHashTable`, is the custom-hash table implementation backing `CountAggregation`. This separation of concerns allows me to more easily support other group-by operators in the future. These classes are used to perform what would be a COUNT(*), GROUP BY query. For now, it only supports one integer key.
 
-The custom hash-table implementation uses open-addressing, and linear-probing. It has a 70% capacity threshold before automatic growth is triggered, which is implemented as the allocation of a new buffer with iterative element moves if they are `noexcept` (as opposed to copies).
+The custom hash-table implementation uses open-addressing, and linear-probing. It has a 70% capacity threshold before automatic growth is triggered, which is implemented as the allocation of a new buffer with iterative element copies. A later version that expands beyond fundamental types will have conditional moves.
 
 Being open-addressed and using linear probing means that the hash-table structure is an array of contiguous elements. Each index of the array holds exactly one `value_type` of the hash-table, as opposed to each element holding a linked-list of elements any time there is a collision.
 
@@ -112,14 +114,16 @@ Aggregation is a blocking operation, simply because it is intended to produce a 
 I chose to implement with selection vectors and late materialization, because I hoped it would reduce unnecessary early moves of data, and improve performance. I also hoped it would allow for less memory usage until it became necessary at the end of the query, being at the time for user consumption.
 
 ### Decision: Non-owning batch views and buffer reuse
-Each operator writes it's output to a private scratch buffer that is continually re-used. Non-owning views (`std::span`'s) are returned to the caller, rather than incurring a move or copy of the selected indices on every operator execution function call. This means memory allocation for our indices during execution only has to happen once per operator.
+Some relevant operators (primarily `Filter`) write their output to a private scratch buffer that is continually re-used. Non-owning views (`std::span`'s) are returned to the caller, rather than incurring a move or copy of the selected indices on every operator execution function call. This means memory allocation for our indices during execution only has to happen once per operator.
+
+My approach is intended to reduce memory allocations, though also introduces the need for careful awareness of memory lifetimes, and exactly when a buffer will be over-written.
 
 Furthermore, the buffers are never resized, as that would require repeated reallocations if the size of the batch were to not be consistent, again improving performance. This **does** mean that callers need to be given a limited view of the scratch buffer (`std::span`'s `.subspan()` comes in handy here), lest they read beyond the bounds of what is valid data at that time.
 
 ### Decision: Hash aggregation's open addressing and linear probing
 Our custom hash-table implementation forgoes STL's `std::unordered_map`'s design choice of linked-lists and uses open addressing and linear probing (described briefly above in `Hash Aggregation`) with the aim of avoiding the poor-cache locality and dependent memory accesses of pointer chasing associated with linked lists. Instead, upon collision, the index is incremented until an open bucket is found (including if it has to wrap around back to the beginning of the array).
 
-While we retain the performance benefit of our data being contiguous, it does mean that collisions can increase as the number of free array indices that would not result in a collision decrease. A planned future benchmark and technical writeup is on the performance characterists of `std::unordered_map` vs our current custom implementation, and other custom hash table implementations.
+While we retain the performance benefit of our data being contiguous, it does mean that collisions can increase as the number of free array indices that would not result in a collision decrease. A planned future benchmark and technical writeup is on the performance characteristics of `std::unordered_map` vs our current custom implementation, and other custom hash table implementations.
 
 ## Performance and Benchmarks
 
@@ -256,7 +260,7 @@ Not currently supported:
 - Multiple different data types
 - Variable table schemas
 - Null-value representation
-- No SQL parsing or query optimizer
+- SQL parsing or query optimizer
 - SUM queries
 - Joins
 - Composable operators / pipeline scheduler
