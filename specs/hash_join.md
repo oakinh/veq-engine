@@ -13,16 +13,19 @@ Every record in the build side table will be inserted into our hash table. The j
 ```c++
 class HashJoin {
 public:
+    
+    HashJoin(
+        std::span<const ColumnView> build_cols, 
+        std::span<const ColumnView> probe_cols,
+        std::size_t build_col_join_idx,
+        std::size_t probe_col_join_idx
+        );
+    
     using Key = std::uint64_t;
     using RecordId = std::uint64_t;
     
-    struct ProbeOutput {
-        std::size_t rows_in_buffer;
-        bool rows_remaining;
-    }
-    
-    void build(const ProjectedBatch& build_batch);
-    ProbeOutput probe(const ProjectedBatch& batch);
+    void build(std::span<const std::size_t> build_batch);
+    bool probe(std::span<const std::size_t> probe_batch);
     void reset();
     
     std::span<const std::pair<RecordId, RecordId>> getJoinBuffer();
@@ -34,6 +37,13 @@ private:
     std::unordered_map<Key, std::vector<RecordId> hash_table_ {};
     std::size_t probe_selection_idx_ {};
     std::size_t build_match_idx_ {};
+    
+    // Buffer sizes
+    std::size_t rows_in_joined_buffer_ {};
+    std::size_t build_col_buffer_size_ {};
+    std::size_t probe_col_buffer_size_ {};
+    std::size_t build_col_join_idx_ {};
+    std::size_t probe_col_join_idx_ {};
     
     // Output buffers
     std::array<std::pair<RecordId, RecordId>, MAX_BATCH_SIZE> joined_ids_buffer_ {};
@@ -69,8 +79,6 @@ For a hash join with `B` build rows, `P` probe rows `D` distinct build keys, and
 - Hash-table storage: O(B + D)
 - Output buffer: O(1024)
 - Worst case hashing: Likely much worse under pathological conditions
-
-
 
 ### How The Current System Will Need To Be Extended
 - Add a join key column to the existing `Table` struct
