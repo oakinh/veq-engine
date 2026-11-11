@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <veq/storage/column.hpp>
 
 namespace veq {

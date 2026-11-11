@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <ranges>
+#include <cassert>
 
 #include "veq/execution/projection.hpp"
 #include "veq/storage/batch.hpp"
@@ -21,12 +22,15 @@ namespace veq {
             probe_col_buffer_size_(probe_cols.size()),
             build_col_join_idx_(build_col_join_idx),
             probe_col_join_idx_(probe_col_join_idx) {
+            assert(build_col_join_idx < build_col_buffer_size_);
+            assert(probe_col_join_idx < probe_col_buffer_size_);
+
             std::ranges::copy(build_cols, build_columns_buffer_.begin());
             std::ranges::copy(probe_cols, probe_columns_buffer_.begin());
         }
 
         using Key = std::uint64_t;
-        using RecordId = std::uint64_t;
+        using RecordId = std::size_t;
 
         // Execution and state
         void build(std::span<const std::size_t> build_selection);
@@ -49,8 +53,8 @@ namespace veq {
 
     private:
         std::unordered_map<Key, std::vector<RecordId>> hash_table_ {};
-        std::size_t probe_selection_idx_ {};
-        std::size_t build_match_idx_ {};
+        std::size_t last_probe_selection_idx_ {};
+        std::size_t last_build_match_idx_ {};
 
         // Buffer sizes
         std::size_t rows_in_joined_buffer_ {};
@@ -62,9 +66,9 @@ namespace veq {
         std::size_t probe_col_join_idx_ {};
 
         // Output buffers
-        std::array<std::pair<RecordId, RecordId>, MAX_BATCH_SIZE> joined_ids_buffer_ {};
-        std::array<ColumnView, 3> build_columns_buffer_ {};
-        std::array<ColumnView, 3> probe_columns_buffer_ {};
+        std::array<std::pair<RecordId, RecordId>, MAX_BATCH_SIZE> joined_ids_buffer_ {}; // { build_side, probe_side }
+        std::array<ColumnView, TABLE_COLUMN_COUNT> build_columns_buffer_ {};
+        std::array<ColumnView, TABLE_COLUMN_COUNT> probe_columns_buffer_ {};
 
     };
 }

@@ -62,6 +62,7 @@ target_sources(veq
         src/execution/filter.cpp
         src/execution/projection.cpp
         src/execution/count_aggregation.cpp
+        src/execution/hash_join.cpp
 
         PUBLIC
         include/veq/storage/column.hpp
@@ -72,6 +73,7 @@ target_sources(veq
         include/veq/execution/filter.hpp
         include/veq/execution/count_aggregation.hpp
         include/veq/execution/projection.hpp
+        include/veq/execution/hash_join.hpp
 )
 
 # ------------------------------------------------------------------------------
