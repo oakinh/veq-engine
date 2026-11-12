@@ -133,6 +133,7 @@ if(VEQ_BUILD_TESTS AND BUILD_TESTING)
             tests/projection_test.cpp
             tests/pipeline_test.cpp
             tests/count_aggregation.cpp
+            tests/hash_join_test.cpp
     )
 
     target_link_libraries(veq_tests
