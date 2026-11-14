@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cassert>
+#include <numeric>
 #include <veq/execution/hash_join.hpp>
 #include <veq/execution/projection.hpp>
 #include <veq/storage/batch.hpp>
@@ -38,6 +39,73 @@ protected:
             assert(column_views_tiny_1_[1].data[i] == 40);
         }
         assert(column_views_tiny_2_[1].data[7] == 40);
+    }
+
+    void testHashJoinVariant(std::size_t build_size,
+        std::size_t probe_size,
+        std::size_t build_col_join_idx,
+        std::size_t probe_col_join_idx,
+        std::optional<std::vector<std::size_t>> build_selection = std::nullopt,
+        std::optional<std::vector<std::size_t>> probe_selection = std::nullopt
+        ) {
+        const auto build { veq::test::buildEvenlyDistributedAgeAndOccupationTable(build_size) };
+        const auto probe { veq::test::buildEvenlyDistributedAgeAndOccupationTable(probe_size) };
+        auto build_cols { veq::test::getTableCols(build) };
+        auto probe_cols { veq::test::getTableCols(probe) };
+
+        veq::HashJoin hash_join { build_cols, probe_cols, build_col_join_idx, probe_col_join_idx };
+
+        std::vector<std::size_t> build_indices {
+            build_selection.has_value()
+                ? build_selection.value()
+                : std::views::iota(std::size_t{}, build_size)
+                    | std::ranges::to<std::vector<std::size_t>>()
+        };
+
+        // Build phase
+        hash_join.build(build_indices);
+
+        ASSERT_EQ(build_indices.size(), hash_join.getHashTableSize());
+
+        std::vector<std::pair<std::size_t, std::size_t>> results {};
+
+        // Probe phase
+        std::vector<std::size_t> probe_indices {
+            probe_selection.has_value()
+                ? probe_selection.value()
+                : std::views::iota(std::size_t{}, probe_size)
+                    | std::ranges::to<std::vector<std::size_t>>()
+        };
+        std::span remaining { probe_indices };
+
+        while (!remaining.empty()) {
+            const auto count {
+                std::min(veq::MAX_BATCH_SIZE, remaining.size())
+            };
+
+            auto batch { remaining.first(count) };
+
+            while (hash_join.probe(batch)) {
+                results.append_range(hash_join.getJoinBuffer());
+            }
+
+            results.append_range(hash_join.getJoinBuffer());
+
+            remaining = remaining.subspan(count);
+        }
+
+        auto expected_results { veq::test::referenceInnerJoin(
+            build_cols[build_col_join_idx],
+            probe_cols[probe_col_join_idx],
+            build_indices,
+            probe_indices)
+        };
+
+        ASSERT_GT(expected_results.size(), 0);
+        ASSERT_EQ(expected_results.size(), results.size());
+        for (std::size_t i {}; i < results.size(); ++i) {
+            EXPECT_EQ(expected_results[i], results[i]);
+        }
     }
 
 
@@ -102,54 +170,23 @@ TEST_F(HashJoinTest, BatchBoundariesHandledCorrectly) {
 }
 
 TEST_F(HashJoinTest, SparseSelectionAcrossMultipleBatches) {
-    const auto build { veq::test::buildEvenlyDistributedAgeAndOccupationTable(2050) };
-    const auto probe { veq::test::buildEvenlyDistributedAgeAndOccupationTable(3075) };
+    testHashJoinVariant(
+        2050,
+        3075,
+        0,
+        0,
+        veq::test::selectModulo(2050, 2, 1),
+        veq::test::selectModulo(3075, 3, 0)
+        );
+}
+
+TEST_F(HashJoinTest, ManyToManyJoin) {
+    const veq::Table& build { veq::test::buildEvenlyDistributedAgeAndOccupationTable(2050) };
+    const veq::Table& probe { veq::test::buildEvenlyDistributedAgeAndOccupationTable(2050) };
+
     auto build_cols { veq::test::getTableCols(build) };
     auto probe_cols { veq::test::getTableCols(probe) };
 
-    std::size_t probe_size { 3075 };
-
-    auto build_selection { veq::test::selectModulo(2050, 2, 1) };
-    auto probe_selection { veq::test::selectModulo(probe_size, 3, 0) };
-
-    veq::HashJoin hash_join { build_cols, probe_cols, 0, 0 };
-
-    hash_join.build(build_selection);
-    ASSERT_EQ(build_selection.size(), hash_join.getHashTableSize());
-
-    std::vector<std::pair<std::size_t, std::size_t>> results {};
-
-    std::span remaining { probe_selection };
-
-    while (!remaining.empty()) {
-        const auto count {
-            std::min(veq::MAX_BATCH_SIZE, remaining.size())
-        };
-
-        auto batch { remaining.first(count) };
-
-        while (hash_join.probe(batch)) {
-            //std::unreachable();
-            results.append_range(hash_join.getJoinBuffer());
-        }
-
-        results.append_range(hash_join.getJoinBuffer());
-
-        remaining = remaining.subspan(count);
-    }
-
-    auto expected_results { veq::test::referenceInnerJoin(
-        build_cols[0],
-        probe_cols[0],
-        build_selection,
-        probe_selection)
-    };
-
-    ASSERT_GT(expected_results.size(), 0);
-    ASSERT_EQ(expected_results.size(), results.size());
-    for (std::size_t i {}; i < results.size(); ++i) {
-        EXPECT_EQ(expected_results[i], results[i]);
-    }
 }
 
 
