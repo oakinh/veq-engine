@@ -45,7 +45,7 @@ namespace veq {
                         last_probe_selection_idx_ = rel_probe_selection_idx;
                         finished_last_batch = false;
                         return true;
-                    };
+                    }
 
                     std::size_t global_build_idx { matched_indices[rel_build_matched_idx] };
 
@@ -54,15 +54,6 @@ namespace veq {
                     joined_ids_buffer_[output_buffer_idx] = { global_build_idx, global_probe_idx }; // { build_side, probe_side };
                     ++output_buffer_idx;
 
-                    // if (output_buffer_idx == MAX_BATCH_SIZE) {
-                    //     rows_in_joined_buffer_ = output_buffer_idx;
-                    //
-                    //     // Resumption tracking indices
-                    //     last_build_match_idx_ = rel_build_matched_idx;
-                    //     last_probe_selection_idx_ = rel_probe_selection_idx;
-                    //     finished_last_batch = false;
-                    //     return true;
-                    // };
                 }
             }
         }
