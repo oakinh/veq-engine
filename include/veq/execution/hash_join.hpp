@@ -50,6 +50,10 @@ namespace veq {
             return std::span{ probe_columns_buffer_ }.first(probe_col_buffer_size_);
         }
 
+#ifndef NDEBUG
+        std::size_t getHashTableSize() { return hash_table_.size(); }
+#endif
+
 
     private:
         std::unordered_map<Key, std::vector<RecordId>> hash_table_ {};
@@ -57,6 +61,7 @@ namespace veq {
         std::size_t last_build_match_idx_ {};
 
         // Buffer sizes
+        bool finished_last_batch { false };
         std::size_t rows_in_joined_buffer_ {};
         std::size_t build_col_buffer_size_ {};
         std::size_t probe_col_buffer_size_ {};

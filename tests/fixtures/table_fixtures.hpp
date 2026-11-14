@@ -2,9 +2,17 @@
 #include <cassert>
 #include <optional>
 #include <veq/storage/table/table.hpp>
-
+#include <span>
 
 namespace veq::test {
+inline std::vector<veq::ColumnView> getTableCols(const veq::Table& table) {
+    return {
+        { veq::ColumnView{ table.id.data() },
+            veq::ColumnView{ table.age.data() },
+            veq::ColumnView{ table.occupation_id.data() } }
+    };
+}
+
 inline Table makeTinyTable(const std::optional<int> variant = std::nullopt) {
     Table table {};
     // Size 10
@@ -46,4 +54,45 @@ inline Table buildEvenlyDistributedAgeAndOccupationTable(std::size_t size) {
     }
     return table;
 }
+
+inline std::vector<std::size_t> selectModulo(
+    std::size_t size,
+    std::size_t divisor,
+    std::size_t remainder
+    ) {
+    assert(divisor > 0 && remainder < divisor);
+
+    std::vector<std::size_t> indices {};
+
+    for (std::size_t i{}; i < size; ++i) {
+        if (i % divisor == remainder) {
+            indices.emplace_back(i);
+        }
+    }
+
+    return indices;
+}
+
+using RowPair = std::pair<std::size_t, std::size_t>;
+
+inline std::vector<RowPair> referenceInnerJoin(
+    const ColumnView build_keys,
+    const ColumnView probe_keys,
+    std::span<const std::size_t> build_selection,
+    std::span<const std::size_t> probe_selection
+    ) {
+    std::vector<RowPair> results {};
+
+    for (const auto& probe_idx : probe_selection) {
+        for (const auto& build_idx : build_selection) {
+            if (build_keys.data[build_idx] == probe_keys.data[probe_idx]) {
+                results.emplace_back(build_idx, probe_idx);
+            }
+        }
+    }
+
+    return results;
+}
+
+
 } // namespace veq::test
