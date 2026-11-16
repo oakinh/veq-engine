@@ -14,7 +14,7 @@ namespace veq {
     }
 
     bool HashJoin::probe(std::span<const std::size_t> probe_selection) {
-        if (finished_last_batch) {
+        if (finished_last_batch_) {
             assert(last_probe_selection_idx_ == 0);
             assert(last_build_match_idx_ == 0);
         }
@@ -22,7 +22,7 @@ namespace veq {
         const ColumnView probe_join_key_col { probe_columns_buffer_[probe_col_join_idx_] };
 
         std::size_t output_buffer_idx {};
-
+        assert(last_probe_selection_idx_ < probe_selection.size());
         for (std::size_t rel_probe_selection_idx { last_probe_selection_idx_ };
             rel_probe_selection_idx < probe_selection.size();
             ++rel_probe_selection_idx) {
@@ -34,6 +34,7 @@ namespace veq {
             if (it != hash_table_.end()) {
                 const auto& matched_indices { it->second };
 
+                assert(last_build_match_idx_ < matched_indices.size());
                 for (std::size_t rel_build_matched_idx { last_build_match_idx_ };
                     rel_build_matched_idx < matched_indices.size();
                     ++rel_build_matched_idx) {
@@ -43,7 +44,7 @@ namespace veq {
                         // Resumption tracking indices
                         last_build_match_idx_ = rel_build_matched_idx;
                         last_probe_selection_idx_ = rel_probe_selection_idx;
-                        finished_last_batch = false;
+                        finished_last_batch_ = false;
                         return true;
                     }
 
@@ -53,7 +54,9 @@ namespace veq {
                     assert(it->first == probe_join_key_col.data[global_probe_idx]);
                     joined_ids_buffer_[output_buffer_idx] = { global_build_idx, global_probe_idx }; // { build_side, probe_side };
                     ++output_buffer_idx;
-
+#ifndef NDEBUG
+                    ++total_joined_ids_;
+#endif
                 }
             }
         }
@@ -63,7 +66,7 @@ namespace veq {
         // No resumption needed
         last_build_match_idx_ = 0;
         last_probe_selection_idx_ = 0;
-        finished_last_batch = true;
+        finished_last_batch_ = true;
         return false;
     }
 
@@ -73,4 +76,14 @@ namespace veq {
         build_col_buffer_size_ = 0;
         probe_col_buffer_size_ = 0;
     }
+
+#ifndef NDEBUG
+    std::size_t HashJoin::getHashTableRecordIdCount() {
+        std::size_t count {};
+        for (const auto& record_ids : hash_table_ | std::views::values) {
+            count += record_ids.size();
+        }
+        return count;
+    }
+#endif
 }

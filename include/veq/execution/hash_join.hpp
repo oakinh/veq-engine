@@ -51,7 +51,8 @@ namespace veq {
         }
 
 #ifndef NDEBUG
-        std::size_t getHashTableSize() { return hash_table_.size(); }
+        std::size_t getHashTableRecordIdCount();
+        std::size_t total_joined_ids_ {};
 #endif
 
 
@@ -61,7 +62,7 @@ namespace veq {
         std::size_t last_build_match_idx_ {};
 
         // Buffer sizes
-        bool finished_last_batch { false };
+        bool finished_last_batch_ { false };
         std::size_t rows_in_joined_buffer_ {};
         std::size_t build_col_buffer_size_ {};
         std::size_t probe_col_buffer_size_ {};

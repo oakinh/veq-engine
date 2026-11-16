@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cassert>
 #include <numeric>
+#include <algorithm>
 #include <veq/execution/hash_join.hpp>
 #include <veq/execution/projection.hpp>
 #include <veq/storage/batch.hpp>
@@ -65,7 +66,9 @@ protected:
         // Build phase
         hash_join.build(build_indices);
 
-        ASSERT_EQ(build_indices.size(), hash_join.getHashTableSize());
+#ifndef NDEBUG
+        ASSERT_EQ(build_indices.size(), hash_join.getHashTableRecordIdCount());
+#endif
 
         std::vector<std::pair<std::size_t, std::size_t>> results {};
 
@@ -76,23 +79,65 @@ protected:
                 : std::views::iota(std::size_t{}, probe_size)
                     | std::ranges::to<std::vector<std::size_t>>()
         };
-        std::span remaining { probe_indices };
 
-        while (!remaining.empty()) {
-            const auto count {
-                std::min(veq::MAX_BATCH_SIZE, remaining.size())
-            };
+        std::vector<std::vector<std::size_t>> probe_batches {};
 
-            auto batch { remaining.first(count) };
-
-            while (hash_join.probe(batch)) {
-                results.append_range(hash_join.getJoinBuffer());
+        std::vector<std::size_t> batch {};
+        for (std::size_t idx : probe_indices) {
+            if (batch.size() == veq::MAX_BATCH_SIZE) {
+                probe_batches.push_back(batch);
+                batch.clear();
             }
-
-            results.append_range(hash_join.getJoinBuffer());
-
-            remaining = remaining.subspan(count);
+            batch.emplace_back(idx);
         }
+        probe_batches.push_back(batch);
+
+        std::size_t total_probe_count {};
+        for (const auto& b : probe_batches) {
+            total_probe_count += b.size();
+        }
+
+        std::size_t expected_probe_idx_count {
+            probe_selection.has_value()
+            ? probe_selection.value().size()
+            : probe_size
+        };
+
+        ASSERT_EQ(expected_probe_idx_count, total_probe_count);
+
+        for (const auto& probe_batch : probe_batches) {
+
+            while (hash_join.probe(probe_batch)) {
+                auto buffer { hash_join.getJoinBuffer() };
+                EXPECT_EQ(buffer.size(), veq::MAX_BATCH_SIZE);
+                results.append_range(buffer);
+            }
+            auto buffer { hash_join.getJoinBuffer() };
+            ASSERT_LT(buffer.size(), veq::MAX_BATCH_SIZE);
+            results.append_range(buffer);
+        }
+
+
+        // std::span remaining { probe_indices };
+        //
+        //  while (!remaining.empty()) {
+        //      const auto count {
+        //          std::min(veq::MAX_BATCH_SIZE, remaining.size())
+        //      };
+        //
+        //      auto batch { remaining.first(count) };
+        //
+        //      while (hash_join.probe(batch)) {
+        //          auto buffer { hash_join.getJoinBuffer() };
+        //          EXPECT_EQ(buffer.size(), veq::MAX_BATCH_SIZE);
+        //          results.append_range(buffer);
+        //      }
+        //
+        //
+        //      results.append_range(hash_join.getJoinBuffer());
+        //
+        //      remaining = remaining.subspan(count);
+        //  }
 
         auto expected_results { veq::test::referenceInnerJoin(
             build_cols[build_col_join_idx],
@@ -101,10 +146,13 @@ protected:
             probe_indices)
         };
 
+        EXPECT_EQ(hash_join.total_joined_ids_, expected_results.size());
+        std::sort(expected_results.begin(), expected_results.end());
+        std::sort(results.begin(), results.end());
         ASSERT_GT(expected_results.size(), 0);
-        ASSERT_EQ(expected_results.size(), results.size());
+        EXPECT_EQ(expected_results.size(), results.size());
         for (std::size_t i {}; i < results.size(); ++i) {
-            EXPECT_EQ(expected_results[i], results[i]);
+            ASSERT_EQ(expected_results[i], results[i]);
         }
     }
 
@@ -181,12 +229,79 @@ TEST_F(HashJoinTest, SparseSelectionAcrossMultipleBatches) {
 }
 
 TEST_F(HashJoinTest, ManyToManyJoin) {
-    const veq::Table& build { veq::test::buildEvenlyDistributedAgeAndOccupationTable(2050) };
-    const veq::Table& probe { veq::test::buildEvenlyDistributedAgeAndOccupationTable(2050) };
-
-    auto build_cols { veq::test::getTableCols(build) };
-    auto probe_cols { veq::test::getTableCols(probe) };
-
+    testHashJoinVariant(
+        2050,
+        2050,
+        1,
+        1);
+//     std::size_t build_size { 2050 };
+//     std::size_t probe_size { 2050 };
+//     std::size_t build_col_join_idx { 1 };
+//     std::size_t probe_col_join_idx { 1 };
+//     std::optional<std::vector<std::size_t>> build_selection { std::nullopt };
+// std::optional<std::vector<std::size_t>> probe_selection { std::nullopt };
+//
+//     const auto build { veq::test::buildEvenlyDistributedAgeAndOccupationTable(build_size) };
+//     const auto probe { veq::test::buildEvenlyDistributedAgeAndOccupationTable(probe_size) };
+//     auto build_cols { veq::test::getTableCols(build) };
+//     auto probe_cols { veq::test::getTableCols(probe) };
+//
+//     veq::HashJoin hash_join { build_cols, probe_cols, build_col_join_idx, probe_col_join_idx };
+//
+//     std::vector<std::size_t> build_indices {
+//         build_selection.has_value()
+//             ? build_selection.value()
+//             : std::views::iota(std::size_t{}, build_size)
+//                 | std::ranges::to<std::vector<std::size_t>>()
+//     };
+//
+//     // Build phase
+//     hash_join.build(build_indices);
+//
+// #ifndef NDEBUG
+//     ASSERT_EQ(build_indices.size(), hash_join.getHashTableRecordIdCount());
+// #endif
+//
+//     std::vector<std::pair<std::size_t, std::size_t>> results {};
+//
+//     // Probe phase
+//     std::vector<std::size_t> probe_indices {
+//         probe_selection.has_value()
+//             ? probe_selection.value()
+//             : std::views::iota(std::size_t{}, probe_size)
+//                 | std::ranges::to<std::vector<std::size_t>>()
+//     };
+//     std::span remaining { probe_indices };
+//
+//     while (!remaining.empty()) {
+//         const auto count {
+//             std::min(veq::MAX_BATCH_SIZE, remaining.size())
+//         };
+//
+//         auto batch { remaining.first(count) };
+//
+//         while (hash_join.probe(batch)) {
+//             results.append_range(hash_join.getJoinBuffer());
+//         }
+//
+//         results.append_range(hash_join.getJoinBuffer());
+//
+//         remaining = remaining.subspan(count);
+//     }
+//
+//     auto expected_results { veq::test::referenceInnerJoin(
+//         build_cols[build_col_join_idx],
+//         probe_cols[probe_col_join_idx],
+//         build_indices,
+//         probe_indices)
+//     };
+//
+//     ASSERT_GT(expected_results.size(), 0);
+//     ASSERT_EQ(expected_results.size(), results.size());
+//     for (std::size_t i {}; i < results.size(); ++i) {
+//         EXPECT_EQ(expected_results[i], results[i]);
+//     }
 }
+
 
 
