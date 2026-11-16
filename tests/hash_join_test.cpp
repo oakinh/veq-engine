@@ -42,6 +42,33 @@ protected:
         assert(column_views_tiny_2_[1].data[7] == 40);
     }
 
+    void findFirstIncorrectProbeRow(
+        const std::vector<veq::test::RowPair>& expected_results,
+        const std::vector<veq::test::RowPair>& actual_results,
+        std::size_t probe_size
+        ) {
+        std::vector<std::size_t> expected_by_probe(probe_size);
+        std::vector<std::size_t> actual_by_probe(probe_size);
+
+        for (const auto& probe_idx : expected_results | std::views::values) {
+            ++expected_by_probe.at(probe_idx);
+        }
+
+        for (const auto& probe_idx : actual_results | std::views::values) {
+            ++actual_by_probe.at(probe_idx);
+        }
+
+        for (std::size_t i {}; i < probe_size; ++i) {
+            if (expected_by_probe[i] != actual_by_probe[i]) {
+                ADD_FAILURE()
+                    << "First incorrect probe row: " << i
+                    << ", expected: " << expected_by_probe[i]
+                    << ", actual: " << actual_by_probe[i];
+                break;
+            }
+        }
+    }
+
     void testHashJoinVariant(std::size_t build_size,
         std::size_t probe_size,
         std::size_t build_col_join_idx,
@@ -80,64 +107,26 @@ protected:
                     | std::ranges::to<std::vector<std::size_t>>()
         };
 
-        std::vector<std::vector<std::size_t>> probe_batches {};
+        std::span remaining { probe_indices };
 
-        std::vector<std::size_t> batch {};
-        for (std::size_t idx : probe_indices) {
-            if (batch.size() == veq::MAX_BATCH_SIZE) {
-                probe_batches.push_back(batch);
-                batch.clear();
-            }
-            batch.emplace_back(idx);
-        }
-        probe_batches.push_back(batch);
+         while (!remaining.empty()) {
+             const auto count {
+                 std::min(veq::MAX_BATCH_SIZE, remaining.size())
+             };
 
-        std::size_t total_probe_count {};
-        for (const auto& b : probe_batches) {
-            total_probe_count += b.size();
-        }
+             auto batch { remaining.first(count) };
 
-        std::size_t expected_probe_idx_count {
-            probe_selection.has_value()
-            ? probe_selection.value().size()
-            : probe_size
-        };
-
-        ASSERT_EQ(expected_probe_idx_count, total_probe_count);
-
-        for (const auto& probe_batch : probe_batches) {
-
-            while (hash_join.probe(probe_batch)) {
-                auto buffer { hash_join.getJoinBuffer() };
-                EXPECT_EQ(buffer.size(), veq::MAX_BATCH_SIZE);
-                results.append_range(buffer);
-            }
-            auto buffer { hash_join.getJoinBuffer() };
-            ASSERT_LT(buffer.size(), veq::MAX_BATCH_SIZE);
-            results.append_range(buffer);
-        }
+             while (hash_join.probe(batch)) {
+                 auto buffer { hash_join.getJoinBuffer() };
+                 EXPECT_EQ(buffer.size(), veq::MAX_BATCH_SIZE);
+                 results.append_range(buffer);
+             }
 
 
-        // std::span remaining { probe_indices };
-        //
-        //  while (!remaining.empty()) {
-        //      const auto count {
-        //          std::min(veq::MAX_BATCH_SIZE, remaining.size())
-        //      };
-        //
-        //      auto batch { remaining.first(count) };
-        //
-        //      while (hash_join.probe(batch)) {
-        //          auto buffer { hash_join.getJoinBuffer() };
-        //          EXPECT_EQ(buffer.size(), veq::MAX_BATCH_SIZE);
-        //          results.append_range(buffer);
-        //      }
-        //
-        //
-        //      results.append_range(hash_join.getJoinBuffer());
-        //
-        //      remaining = remaining.subspan(count);
-        //  }
+             results.append_range(hash_join.getJoinBuffer());
+
+             remaining = remaining.subspan(count);
+         }
 
         auto expected_results { veq::test::referenceInnerJoin(
             build_cols[build_col_join_idx],
@@ -151,6 +140,9 @@ protected:
         std::sort(results.begin(), results.end());
         ASSERT_GT(expected_results.size(), 0);
         EXPECT_EQ(expected_results.size(), results.size());
+
+        findFirstIncorrectProbeRow(expected_results, results, probe_size);
+
         for (std::size_t i {}; i < results.size(); ++i) {
             ASSERT_EQ(expected_results[i], results[i]);
         }

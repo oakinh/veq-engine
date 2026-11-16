@@ -28,6 +28,7 @@ namespace veq {
             ++rel_probe_selection_idx) {
             // These two loops are index-ception... Using buffer indexes to retrieve global table indexes...
             std::size_t global_probe_idx { probe_selection[rel_probe_selection_idx] };
+            last_probe_selection_idx_ = 0; // TODO: Wasteful to run every time.
 
             const auto it { hash_table_.find(probe_join_key_col.data[global_probe_idx]) };
 
@@ -38,6 +39,8 @@ namespace veq {
                 for (std::size_t rel_build_matched_idx { last_build_match_idx_ };
                     rel_build_matched_idx < matched_indices.size();
                     ++rel_build_matched_idx) {
+                    last_build_match_idx_ = 0; // TODO: Wasteful to run every time
+
                     if (output_buffer_idx == MAX_BATCH_SIZE) {
                         rows_in_joined_buffer_ = output_buffer_idx;
 
